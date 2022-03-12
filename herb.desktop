@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Herb
+Comment=Manual tiling compositor written in zig.
+Exec=herb
+DesktopNames=Herb
+Type=Application
