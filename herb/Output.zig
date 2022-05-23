@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD 2-Clause "Simplified" License
 //
-// herb/output.zig
+// herb/Output.zig
 //
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
@@ -25,7 +25,7 @@ pub fn frame(listener: *wl.Listener(*wlr.Output), _: *wlr.Output) void {
     const output = @fieldParentPtr(Self, "frame", listener);
 
     // Get the scene output with respect to the wlr.Output object that's being passed.
-    const scene_output = output.server.scene.getSceneOutput(output.wlr_output).?;
+    const scene_output = output.server.wlr_scene.getSceneOutput(output.wlr_output).?;
 
     // Commit the output to the scene.
     _ = scene_output.commit();

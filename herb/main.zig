@@ -16,28 +16,10 @@ const wl = @import("wayland").server.wl; // server side zig bindings for libwayl
 const wlr = @import("wlroots"); // zig bindings for wlroots.
 
 pub fn main() anyerror!void {
-    // Note: os.getenv returns an optional []const u8 ( string ) so we can simply check against null.
+    // Wayland requires XDG_RUNTIME_DIR to be set in order for proper functioning.
     if (os.getenv("XDG_RUNTIME_DIR") == null) {
         @panic("XDG_RUNTIME_DIR has not been set.");
     }
-
-    /////////////////////////////// This will be used eventually.
-    // We assign the block an identifier - "config".
-    const config_path = config: {
-        // This notation attempts to access the optional []const u8 ( string ) if it is not null, else it jumps to else if and else cases subsequently.
-        if (os.getenv("XDG_CONFIG_HOME")) |xdg_config_home| {
-            // If we did get a string return, break back into the config scope and attempt to create a path to the config file.
-            break :config try fs.path.joinZ(gpa, &[_][]const u8{ xdg_config_home, "herbwm/herbwmrc" });
-        } else if (os.getenv("HOME")) |home| {
-            // If we didn't get a string return from os.getenv("XDG..."), then check for $HOME and if we get a path then attempt to resolve it.
-            break :config try fs.path.joinZ(gpa, &[_][]const u8{ home, ".config/herbwm/herbwmrc" });
-        } else {
-            // If we didn't get any matches, panic.
-            @panic("Failed to read $XDG_CONFIG_HOME and $HOME environment variables. Unable to resolve config file path.");
-        }
-    };
-    gpa.free(config_path); // You have to free all joinZ calls.
-    ///////////////////////////////
 
     // Initializing wlroots log utility with debug level.
     wlr.log.init(.debug);

@@ -1,0 +1,32 @@
+#+TITLE: HerbWM
+#+DESCRIPTION: Manual tiling bspwm-ish clone wayland compositor.
+#+AUTHOR: Shinyzenith <aakashsensharma@gmail.com>
+
+* Pre-requisites
+- Zig
+- Wlroots
+- Libwayland
+
+* TODO
+** Seat handling
+  - libseat
+  - libevdev
+  - Multi-seat handling
+
+** Protocol support
+- Support all major wlroots protocols
+- Support of a few kde protocols such as the idle protocol.
+
+** View and tag handling
+- Dwm like tags
+- bspwm like tiling, possibly improve upon rivers layout client protocol.
+
+** GLSL shaders
+  - Dual kawase blur.
+  - I don't think I want to add any other shader.
+
+** Xwayland support
+- Xwayland unmanaged handling
+
+** IPC client
+- bspc clone required.
