@@ -7,6 +7,16 @@ pub fn build(builder: *std.build.Builder) !void {
     const scanner = ScanProtocolsStep.create(builder);
     scanner.addSystemProtocol("stable/xdg-shell/xdg-shell.xml");
 
+    // Generating the bindings we require, we need to manually update this.
+    scanner.generate("wl_compositor", 4);
+    scanner.generate("wl_subcompositor", 1);
+    scanner.generate("wl_shm", 1);
+    scanner.generate("wl_output", 4);
+    scanner.generate("wl_seat", 7);
+    scanner.generate("wl_data_device_manager", 3);
+
+    scanner.generate("xdg_wm_base", 2);
+
     // Creating the executable.
     const exe = builder.addExecutable("herb", "herb/main.zig");
 
