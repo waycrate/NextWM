@@ -18,7 +18,7 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("xdg_wm_base", 2);
 
     // Creating the executable.
-    const exe = builder.addExecutable("herb", "herb/main.zig");
+    const exe = builder.addExecutable("herb", "src/main.zig");
 
     // Setting executable target and build mode.
     exe.setTarget(builder.standardTargetOptions(.{}));

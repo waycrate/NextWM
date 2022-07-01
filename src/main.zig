@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD 2-Clause "Simplified" License
 //
-// herb/main.zig
+// src/main.zig
 //
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
@@ -15,6 +15,9 @@ const Server = @import("Server.zig");
 const wl = @import("wayland").server.wl; // server side zig bindings for libwayland.
 const wlr = @import("wlroots"); // zig bindings for wlroots.
 
+// Instantiating the server.
+pub var server: Server = undefined;
+
 pub fn main() anyerror!void {
     // Wayland requires XDG_RUNTIME_DIR to be set in order for proper functioning.
     if (os.getenv("XDG_RUNTIME_DIR") == null) {
@@ -23,9 +26,6 @@ pub fn main() anyerror!void {
 
     // Initializing wlroots log utility with debug level.
     wlr.log.init(.debug);
-
-    // Instantiating the server.
-    var server: Server = undefined;
 
     // Attempt to initialize the server, if it fails then de-initialize it.
     try server.init();

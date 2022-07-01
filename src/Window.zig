@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD 2-Clause "Simplified" License
 //
-// herb/View.zig
+// src/Window.zig
 //
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
@@ -19,8 +19,8 @@ xdg_surface: *wlr.XdgSurface,
 scene_node: *wlr.SceneNode,
 map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(map),
 
-pub fn map(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface) void {
-    const view = @fieldParentPtr(Self, "map", listener);
-    view.server.views.prepend(view);
-    view.server.focusView(view, xdg_surface.surface);
+pub fn map(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+    const window = @fieldParentPtr(Self, "map", listener);
+    window.server.windows.prepend(window);
+    //view.server.focusView(view, xdg_surface.surface);
 }
