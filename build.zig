@@ -20,7 +20,7 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("zwlr_layer_shell_v1", 4);
 
     // Creating the executable.
-    const exe = builder.addExecutable("herb", "src/main.zig");
+    const exe = builder.addExecutable("herb", "src/herb.zig");
 
     // Setting executable target and build mode.
     exe.setTarget(builder.standardTargetOptions(.{}));
