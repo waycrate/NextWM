@@ -19,6 +19,8 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("xdg_wm_base", 2);
     scanner.generate("zwlr_layer_shell_v1", 4);
 
+    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd ./nextctl;make" });
+
     // Creating the executable.
     const exe = builder.addExecutable("next", "next/next.zig");
 
@@ -26,15 +28,26 @@ pub fn build(builder: *std.build.Builder) !void {
     exe.setTarget(builder.standardTargetOptions(.{}));
     exe.setBuildMode(builder.standardReleaseOptions());
 
-    // Depend on scanner step.
+    // Checking if scdoc exists and accordingly adding man page generation step.
+    if (blk: {
+        _ = builder.findProgram(&[_][]const u8{"scdoc"}, &[_][]const u8{}) catch |err| switch (err) {
+            error.FileNotFound => break :blk false,
+            else => return err,
+        };
+        break :blk true;
+    }) {
+        const scdoc = ScdocStep.create(builder);
+        try scdoc.install();
+    }
+
+    // Depend on scanner step to execute.
     exe.step.dependOn(&scanner.step);
 
-    scanner.addCSource(exe); // TODO: remove when https://github.com/ziglang/zig/issues/131 is implemented
+    // TODO: remove when https://github.com/ziglang/zig/issues/131 is implemented
+    scanner.addCSource(exe);
 
     // Add the required packages and link it to our project.
     exe.linkLibC();
-
-    exe.step.dependOn(&scanner.step);
 
     const wayland = std.build.Pkg{
         .name = "wayland",
@@ -69,9 +82,62 @@ pub fn build(builder: *std.build.Builder) !void {
     // Install the .desktop file to the prefix.
     builder.installFile("./next.desktop", "share/wayland-sessions/next.desktop");
 
-    // Install the .desktop file to the prefix.
-    builder.installFile("./next.desktop", "share/wayland-sessions/next.desktop");
+    // Install nextctl binary to the prefix.
+    builder.installFile("./nextctl/nextctl", "bin/nextctl");
 
     // Install the binary to the mentioned prefix.
     exe.install();
 }
+
+const ScdocStep = struct {
+    const scd_paths = [_][]const u8{
+        "doc/next.1.scd",
+        "doc/nextctl.1.scd",
+    };
+
+    builder: *std.build.Builder,
+    step: std.build.Step,
+
+    fn create(builder: *std.build.Builder) *ScdocStep {
+        const self = builder.allocator.create(ScdocStep) catch @panic("out of memory");
+        self.* = init(builder);
+        return self;
+    }
+
+    fn init(builder: *std.build.Builder) ScdocStep {
+        return ScdocStep{
+            .builder = builder,
+            .step = std.build.Step.init(.custom, "Generate man pages", builder.allocator, make),
+        };
+    }
+
+    fn make(step: *std.build.Step) !void {
+        const self = @fieldParentPtr(ScdocStep, "step", step);
+        for (scd_paths) |path| {
+            const command = try std.fmt.allocPrint(
+                self.builder.allocator,
+                "scdoc < {s} > {s}",
+                .{ path, path[0..(path.len - 4)] },
+            );
+            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", command });
+        }
+    }
+
+    fn install(self: *ScdocStep) !void {
+        self.builder.getInstallStep().dependOn(&self.step);
+
+        for (scd_paths) |path| {
+            const path_no_ext = path[0..(path.len - 4)];
+            const basename_no_ext = std.fs.path.basename(path_no_ext);
+            const section = path_no_ext[(path_no_ext.len - 1)..];
+
+            const output = try std.fmt.allocPrint(
+                self.builder.allocator,
+                "share/man/man{s}/{s}",
+                .{ section, basename_no_ext },
+            );
+
+            self.builder.installFile(path_no_ext, output);
+        }
+    }
+};

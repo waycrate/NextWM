@@ -5,7 +5,7 @@
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
-const flags = @import("flags.zig");
+const flags = @import("./utils/flags.zig");
 const std = @import("std");
 const fs = std.fs;
 const io = std.io;

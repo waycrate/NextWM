@@ -4,8 +4,6 @@
 #include <string.h>
 #include <wayland-client.h>
 
-#define VERSION "1.0.4"
-
 struct nextctl_state {
   struct wl_display *wl_display;
   struct wl_registry *wl_registry;

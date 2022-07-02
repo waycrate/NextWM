@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: BSD 2-Clause "Simplified" License
 //
-// src/Output.zig
+// src/desktop/Output.zig
 //
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const Self = @This();
-const Server = @import("Server.zig");
+const Server = @import("../Server.zig");
+const allocator = @import("../utils/allocator.zig").allocator;
 
 const std = @import("std");
 const os = std.os;
 
 const wl = @import("wayland").server.wl;
-const server = &@import("next.zig").server;
+const server = &@import("../next.zig").server;
 const wlr = @import("wlroots");
 
 server: *Server,
@@ -48,7 +49,7 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
 
     // Add the new output to the output_layout for automatic layout management by wlroots.
     self.server.wlr_output_layout.addAuto(self.wlr_output);
-    self.server.outputs.append(Server.allocator, self) catch {
+    self.server.outputs.append(allocator, self) catch {
         @panic("Failed to allocate memory.");
     };
 }

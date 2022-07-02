@@ -13,10 +13,11 @@ The wlroots ecosystem is hard to initially get into as per my experience and I w
 
 ### Depedencies
 
-1. `libevdev`
 1. `libinput`
+1. `make`
 1. `pixman`
 1. `pkg-config`
+1. `scdoc` (Optional. If scdoc binary is not found, man pages are not generated.)
 1. `wayland-protocols`
 1. `wayland`
 1. `wlroots` 0.15
@@ -27,7 +28,7 @@ The wlroots ecosystem is hard to initially get into as per my experience and I w
 
 ```bash
 git clone --recursive https://github.com/waycrate/NextWM;cd NextWM
-sudo zig build --prefix/usr/local
+sudo make install
 ```
 
 ## Support

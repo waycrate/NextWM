@@ -9,10 +9,10 @@ const Self = @This();
 
 const std = @import("std");
 
-pub const allocator = std.heap.c_allocator; // zig has no default memory allocator unlike c (malloc, realloc, free) , so we use c_allocator while linking against libc.
-const Window = @import("Window.zig");
-const Output = @import("Output.zig");
-const c = @import("c.zig");
+const allocator = @import("./utils/allocator.zig").allocator;
+const Window = @import("./desktop/Window.zig");
+const Output = @import("./desktop/Output.zig");
+const c = @import("./utils/c.zig");
 
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
@@ -182,24 +182,24 @@ fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
 }
 
 pub fn deinit(self: *Self) void {
-    // Destroy all clients of the server.
-    self.wl_server.destroyClients();
+    self.windows.deinit(allocator);
 
     self.sigabrt_cb.remove();
     self.sigint_cb.remove();
     self.sigquit_cb.remove();
     self.sigterm_cb.remove();
 
-    self.windows.deinit(allocator);
-
     self.wlr_xwayland.destroy();
+    self.wl_server.destroyClients();
+
+    self.wlr_backend.destroy();
+    self.wlr_renderer.destroy();
+    self.wlr_allocator.destroy();
+
     self.wlr_cursor.destroy();
     self.wlr_xcursor_manager.destroy();
     self.wlr_output_layout.destroy();
     self.wlr_seat.destroy();
-    self.wlr_renderer.destroy();
-    self.wlr_allocator.destroy();
-    self.wlr_backend.destroy();
 
     // Destroy the server.
     self.wl_server.destroy();
