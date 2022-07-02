@@ -8,6 +8,7 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.addSystemProtocol("stable/xdg-shell/xdg-shell.xml");
     scanner.addSystemProtocol("unstable/pointer-constraints/pointer-constraints-unstable-v1.xml");
 
+    scanner.addProtocolPath("protocols/next-control-v1.xml");
     scanner.addProtocolPath("protocols/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml");
 
     // Generating the bindings we require, we need to manually update this.
@@ -22,6 +23,7 @@ pub fn build(builder: *std.build.Builder) !void {
 
     scanner.generate("xdg_wm_base", 2);
     scanner.generate("zwlr_layer_shell_v1", 4);
+    scanner.generate("next_control_v1", 1);
 
     _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd ./nextctl;make" });
 

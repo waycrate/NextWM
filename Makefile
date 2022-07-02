@@ -4,10 +4,13 @@ BINDIR=$(PREFIX)/bin
 all: build
 
 build:
-	zig build install -Drelease-safe
+	zig build -Drelease-safe
 
 fast:
-	zig build install -Drelease-fast
+	zig build -Drelease-fast
+
+small:
+	zig build -Drelease-small
 
 install: build
 	zig build --prefix $(PREFIX)
