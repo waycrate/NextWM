@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   }
 
   state.wl_registry = wl_display_get_registry(state.wl_display);
-  wl_registry_add_listener(state.wl_registry, &registry_listener, NULL);
+  wl_registry_add_listener(state.wl_registry, &registry_listener, &state);
 
   if (wl_display_dispatch(state.wl_display) < 0) {
     fputs("ERROR: wayland dispatch failed.\n", stderr);
