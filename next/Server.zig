@@ -13,6 +13,7 @@ const allocator = @import("./utils/allocator.zig").allocator;
 const Window = @import("./desktop/Window.zig");
 const Output = @import("./desktop/Output.zig");
 const InputManager = @import("./input/InputManager.zig");
+const Control = @import("./global/Control.zig");
 const c = @import("./utils/c.zig");
 
 const wl = @import("wayland").server.wl;
@@ -31,6 +32,7 @@ wlr_scene: *wlr.Scene,
 wlr_compositor: *wlr.Compositor,
 
 input_manager: InputManager,
+control: Control,
 
 sigint_cb: *wl.EventSource,
 sigterm_cb: *wl.EventSource,
@@ -139,7 +141,8 @@ pub fn init(self: *Self) !void {
     _ = try wlr.ScreencopyManagerV1.create(self.wl_server);
     _ = try wlr.Viewporter.create(self.wl_server);
 
-    _ = try self.input_manager.init();
+    try self.input_manager.init();
+    try self.control.init();
 
     // Assign the new output callback to said event.
     //
