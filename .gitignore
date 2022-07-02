@@ -1,2 +1,7 @@
 zig-cache
 zig-out
+nextctl/next-control-v1.c
+nextctl/next-control-v1.h
+nextctl/next-control-v1.o
+nextctl/nextctl.o
+nextctl/nextctl
