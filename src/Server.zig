@@ -8,8 +8,8 @@
 const Self = @This();
 
 const std = @import("std");
-const gpa = std.heap.c_allocator;
 
+pub const allocator = std.heap.c_allocator; // zig has no default memory allocator unlike c (malloc, realloc, free) , so we use c_allocator while linking against libc.
 const Window = @import("Window.zig");
 const Output = @import("Output.zig");
 const c = @import("c.zig");
@@ -40,7 +40,7 @@ new_output: wl.Listener(*wlr.Output),
 
 wlr_xdg_shell: *wlr.XdgShell,
 new_xdg_surface: wl.Listener(*wlr.XdgSurface),
-windows: wl.list.Head(Window, "link") = wl.list.Head(Window, "link").init(),
+windows: std.ArrayListUnmanaged(*Window),
 
 wlr_seat: *wlr.Seat,
 wlr_cursor: *wlr.Cursor,
@@ -65,7 +65,7 @@ pub fn init(self: *Self) !void {
     self.wlr_backend = try wlr.Backend.autocreate(self.wl_server);
 
     // Created when no ouputs are available.
-    // NOTE: THis frees itself when server is destroyed.
+    // NOTE: This frees itself when server is destroyed.
     self.wlr_headless_backend = try wlr.Backend.createHeadless(self.wl_server);
 
     // Creating the renderer.
@@ -191,7 +191,7 @@ pub fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
     // TODO: push to outputlist: const self = @fieldParentPtr(Self, "new_output", listener);
 
     // Allocate memory to a new instance of output struct.
-    const output = gpa.create(Output) catch {
+    const output = allocator.create(Output) catch {
         std.log.err("Failed to allocate new output", .{});
         return;
     };
@@ -213,7 +213,7 @@ pub fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.
     // We only want to manage toplevel here, popups will be managed separately.
     if (xdg_surface.role == .toplevel) {
         // Allocate enough memory for the "Window" object
-        const window = gpa.create(Window) catch {
+        const window = allocator.create(Window) catch {
             std.log.err("Failed to allocate new view", .{});
             return;
         };
@@ -229,7 +229,7 @@ pub fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.
             // If you're wondering what that's for, it'll basically exist to provide sexy dual kawase blur.
             .scene_node = self.wlr_scene.node.createSceneXdgSurface(xdg_surface) catch {
                 // If we fail then the free the memory we allocated earlier.
-                gpa.destroy(window);
+                allocator.destroy(window);
                 std.log.err("Failed to allocate new view", .{});
                 return;
             },

@@ -21,6 +21,8 @@ map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(map),
 
 pub fn map(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
     const window = @fieldParentPtr(Self, "map", listener);
-    window.server.windows.prepend(window);
+    window.server.windows.append(Server.allocator, window) catch {
+        @panic("Failed to allocate memory.");
+    };
     //view.server.focusView(view, xdg_surface.surface);
 }
