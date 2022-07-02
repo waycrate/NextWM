@@ -10,3 +10,6 @@
 [submodule "deps/zig-wlroots"]
 	path = deps/zig-wlroots
 	url = https://github.com/shinyzenith/zig-wlroots
+[submodule "protocols/wlr-protocols"]
+	path = protocols/wlr-protocols
+	url = https://gitlab.freedesktop.org/wlroots/wlr-protocols

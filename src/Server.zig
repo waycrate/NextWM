@@ -37,10 +37,14 @@ sigquit_cb: *wl.EventSource,
 
 wlr_output_layout: *wlr.OutputLayout,
 new_output: wl.Listener(*wlr.Output),
+outputs: std.ArrayListUnmanaged(*Output),
 
 wlr_xdg_shell: *wlr.XdgShell,
 new_xdg_surface: wl.Listener(*wlr.XdgSurface),
 windows: std.ArrayListUnmanaged(*Window),
+
+wlr_layer_shell: *wlr.LayerShellV1,
+new_layer_surface: wl.Listener(*wlr.LayerSurfaceV1),
 
 wlr_seat: *wlr.Seat,
 wlr_cursor: *wlr.Cursor,
@@ -91,9 +95,6 @@ pub fn init(self: *Self) !void {
     self.wlr_output_layout = try wlr.OutputLayout.create();
     errdefer self.wlr_output_layout.destroy();
 
-    // Creating a xdg_shell which is a wayland protocol for application windows.
-    self.wlr_xdg_shell = try wlr.XdgShell.create(self.wl_server);
-
     //Configures a seat, which is a single "seat" at which a user sits and
     //operates the computer. This conceptually includes up to one keyboard,
     //pointer, touch, and drawing tablet device. We also rig up a listener to
@@ -108,6 +109,18 @@ pub fn init(self: *Self) !void {
     // Create a Xcursor manager which loads up xcursor themes on all scale factors. We pass null for theme name and 24 for the cursor size.
     self.wlr_xcursor_manager = try wlr.XcursorManager.create(null, default_cursor_size);
     errdefer self.wlr_xcursor_manager.destroy();
+
+    // Creating a xdg_shell which is a wayland protocol for application windows.
+    self.wlr_xdg_shell = try wlr.XdgShell.create(self.wl_server);
+
+    // Creating a layer shell which is a wlroots protocol for layered textres
+    // such as wallpapers and bars which are drawn *over* other windows.
+    self.wlr_layer_shell = try wlr.LayerShellV1.create(self.wl_server);
+
+    // Initializing Xwayland.
+    // True here indicates that Xwayland will be launched on demand.
+    self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, true);
+    self.wlr_xwayland.setSeat(self.wlr_seat);
 
     // Initialize wl_shm, linux-dmabuf and other buffer factory protocols.
     try self.wlr_renderer.initServer(self.wl_server);
@@ -138,10 +151,9 @@ pub fn init(self: *Self) !void {
     self.new_xdg_surface.setNotify(newXdgSurface);
     self.wlr_xdg_shell.events.new_surface.add(&self.new_xdg_surface);
 
-    // Initializing Xwayland.
-    // True here indicates that Xwayland will be launched on demand.
-    self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, true);
-    self.wlr_xwayland.setSeat(self.wlr_seat);
+    // Add a callback for when a new layer surface is created.
+    self.new_layer_surface.setNotify(newLayerSurface);
+    self.wlr_layer_shell.events.new_surface.add(&self.new_layer_surface);
 }
 
 // Create the socket, start the backend, and setup the environment
@@ -172,6 +184,8 @@ pub fn deinit(self: *Self) void {
     self.sigquit_cb.remove();
     self.sigterm_cb.remove();
 
+    self.windows.deinit(allocator);
+
     self.wlr_xwayland.destroy();
     self.wlr_cursor.destroy();
     self.wlr_xcursor_manager.destroy();
@@ -186,10 +200,7 @@ pub fn deinit(self: *Self) void {
 }
 
 // Callback that gets triggered on existence of a new output.
-pub fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
-    // Getting the server out of the listener. Field Parent Pointer - get a pointer to the parent struct from a field.
-    // TODO: push to outputlist: const self = @fieldParentPtr(Self, "new_output", listener);
-
+fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
     // Allocate memory to a new instance of output struct.
     const output = allocator.create(Output) catch {
         std.log.err("Failed to allocate new output", .{});
@@ -201,7 +212,7 @@ pub fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
 }
 
 // This callback is called when a new xdg toplevel is created ( xdg toplevels are basically application windows. )
-pub fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface) void {
+fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface) void {
     // Getting the server out of the listener. Field Parent Pointer - get a pointer to the parent struct from a field.
     const self = @fieldParentPtr(Self, "new_xdg_surface", listener);
 
@@ -240,4 +251,9 @@ pub fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.
         xdg_surface.events.map.add(&window.map);
         //xdg_surface.events.unmap.add(&view.unmap);
     }
+}
+
+// This callback is called when a new layer surface is created.
+pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), _: *wlr.LayerSurfaceV1) void {
+    //TODO: Populate this.
 }

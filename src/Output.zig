@@ -13,7 +13,6 @@ const os = std.os;
 
 const wl = @import("wayland").server.wl;
 const server = &@import("main.zig").server;
-const zwlr = @import("wayland").server.zwlr;
 const wlr = @import("wlroots");
 
 server: *Server,
@@ -22,6 +21,7 @@ wlr_output: *wlr.Output,
 damage: *wlr.OutputDamage,
 
 frame: wl.Listener(*wlr.OutputDamage) = wl.Listener(*wlr.OutputDamage).init(handleFrame),
+destroy: wl.Listener(*wlr.Output) = wl.Listener(*wlr.Output).init(handleDestroy),
 
 // This callback prepares the output object to accept listeners.
 pub fn init(self: *Self, wlr_output: *wlr.Output) void {
@@ -48,15 +48,18 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
 
     // Add the new output to the output_layout for automatic layout management by wlroots.
     self.server.wlr_output_layout.addAuto(self.wlr_output);
+    self.server.outputs.append(Server.allocator, self) catch {
+        @panic("Failed to allocate memory.");
+    };
 }
 
 // This callback is called everytime an output is ready to display a frame.
 fn handleFrame(listener: *wl.Listener(*wlr.OutputDamage), _: *wlr.OutputDamage) void {
     // Get the parent struct, Output.
-    const output = @fieldParentPtr(Self, "frame", listener);
+    const self = @fieldParentPtr(Self, "frame", listener);
 
     // Get the scene output with respect to the wlr.Output object that's being passed.
-    const scene_output = output.server.wlr_scene.getSceneOutput(output.wlr_output).?;
+    const scene_output = self.server.wlr_scene.getSceneOutput(self.wlr_output).?;
 
     // Commit the output to the scene.
     _ = scene_output.commit();
@@ -67,4 +70,22 @@ fn handleFrame(listener: *wl.Listener(*wlr.OutputDamage), _: *wlr.OutputDamage) 
 
     // Send the FrameDone event.
     scene_output.sendFrameDone(&now);
+}
+
+// This callback is called everytime an output is unplugged.
+fn handleDestroy(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
+    // Get the parent struct, Output.
+    const self = @fieldParentPtr(Self, "destroy", listener);
+
+    // Remove the output from the global compositor output layout.
+    self.server.wlr_output_layout.remove(wlr_output);
+
+    // Iterate over available windows and remove the current output.
+    for (self.server.outputs.items) |value, i| {
+        if (value.wlr_output == self.wlr_output) {
+            _ = self.server.outputs.orderedRemove(i);
+            break;
+        }
+    }
+    //TODO: Move closed monitors clients to focused one.
 }
