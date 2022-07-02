@@ -6,6 +6,8 @@ pub fn build(builder: *std.build.Builder) !void {
     // Creating the wayland-scanner.
     const scanner = ScanProtocolsStep.create(builder);
     scanner.addSystemProtocol("stable/xdg-shell/xdg-shell.xml");
+    scanner.addSystemProtocol("unstable/pointer-constraints/pointer-constraints-unstable-v1.xml");
+
     scanner.addProtocolPath("protocols/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml");
 
     // Generating the bindings we require, we need to manually update this.
@@ -15,6 +17,8 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("wl_output", 4);
     scanner.generate("wl_seat", 7);
     scanner.generate("wl_data_device_manager", 3);
+
+    scanner.generate("zwp_pointer_constraints_v1", 1);
 
     scanner.generate("xdg_wm_base", 2);
     scanner.generate("zwlr_layer_shell_v1", 4);

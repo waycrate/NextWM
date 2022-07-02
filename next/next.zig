@@ -7,15 +7,16 @@
 
 const flags = @import("./utils/flags.zig");
 const std = @import("std");
-const fs = std.fs;
 const io = std.io;
 const os = std.os;
 
 const Server = @import("Server.zig");
 
-const wl = @import("wayland").server.wl; // server side zig bindings for libwayland.
+// Wl namespace for server-side libwayland bindings.
+const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
+// Server is a public global as we import it in some other files.
 pub var server: Server = undefined;
 
 const usage: []const u8 =

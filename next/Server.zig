@@ -12,6 +12,7 @@ const std = @import("std");
 const allocator = @import("./utils/allocator.zig").allocator;
 const Window = @import("./desktop/Window.zig");
 const Output = @import("./desktop/Output.zig");
+const InputManager = @import("./input/InputManager.zig");
 const c = @import("./utils/c.zig");
 
 const wl = @import("wayland").server.wl;
@@ -29,6 +30,8 @@ wlr_allocator: *wlr.Allocator,
 wlr_scene: *wlr.Scene,
 wlr_compositor: *wlr.Compositor,
 
+input_manager: InputManager,
+
 sigint_cb: *wl.EventSource,
 sigterm_cb: *wl.EventSource,
 sigkill_cb: *wl.EventSource,
@@ -37,7 +40,6 @@ sigquit_cb: *wl.EventSource,
 
 wlr_output_layout: *wlr.OutputLayout,
 new_output: wl.Listener(*wlr.Output),
-new_input: wl.Listener(*wlr.InputDevice),
 outputs: std.ArrayListUnmanaged(*Output),
 
 wlr_xdg_shell: *wlr.XdgShell,
@@ -50,8 +52,6 @@ new_layer_surface: wl.Listener(*wlr.LayerSurfaceV1),
 wlr_seat: *wlr.Seat,
 wlr_cursor: *wlr.Cursor,
 wlr_xcursor_manager: *wlr.XcursorManager,
-pointer_destroy: wl.Listener(*wlr.InputDevice),
-
 wlr_xwayland: *wlr.Xwayland,
 
 pub fn init(self: *Self) !void {
@@ -139,16 +139,14 @@ pub fn init(self: *Self) !void {
     _ = try wlr.ScreencopyManagerV1.create(self.wl_server);
     _ = try wlr.Viewporter.create(self.wl_server);
 
+    _ = try self.input_manager.init();
+
     // Assign the new output callback to said event.
     //
     // zig only intializes structs with default value when using .{} notation. Since were not using that, we call `.setNotify`. In other instances
     // we use `.init` on the listener declaration directly.
     self.new_output.setNotify(newOutput);
     self.wlr_backend.events.new_output.add(&self.new_output);
-
-    // This callback is triggered when new input devices are detected such as a keyboard or a mouse.
-    self.new_input.setNotify(newInput);
-    self.wlr_backend.events.new_input.add(&self.new_input);
 
     // Add a callback for when new surfaces are created.
     //
@@ -215,29 +213,6 @@ fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
 
     // Instantiate the output struct.
     output.init(wlr_output);
-}
-
-// Callback that gets triggered on existence of a new input device.
-fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
-    const self = @fieldParentPtr(Self, "new_input", listener);
-
-    switch (input_device.type) {
-        .keyboard => {
-            //TODO: Finish this.
-        },
-        .pointer => {
-            self.wlr_cursor.attachInputDevice(input_device);
-            self.pointer_destroy.setNotify(pointerDestroy);
-            input_device.events.destroy.add(&self.pointer_destroy);
-        },
-        else => {},
-    }
-}
-
-// Called when a pointer device is destroyed.
-fn pointerDestroy(listener: *wl.Listener(*wlr.InputDevice), device: *wlr.InputDevice) void {
-    const self = @fieldParentPtr(Self, "pointer_destroy", listener);
-    self.wlr_cursor.detachInputDevice(device);
 }
 
 // This callback is called when a new xdg toplevel is created ( xdg toplevels are basically application windows. )
