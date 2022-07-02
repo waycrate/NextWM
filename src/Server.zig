@@ -18,7 +18,7 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const default_cursor_size = 24;
-const default_seat_name = "herb-seat0";
+const default_seat_name = "next-seat0";
 
 wl_server: *wl.Server,
 wl_event_loop: *wl.EventLoop,

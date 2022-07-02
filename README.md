@@ -1,15 +1,13 @@
-# HerbWM
+# NextWM
 
 Manual tiling wayland compositor written with wlroots aimed to be a bspwm clone.
 
-Note: HerbWM is still a work in progress project. It won't be useable anytime soon, but when it is I will be the first one to spam screenshots of it in the readme.
-
-Also consider checking out https://github.com/shinyzenith/nim-wl
+Note: NextWM is still a work in progress project. It won't be useable anytime soon, but when it is I will be the first one to spam screenshots of it in the readme.
 
 ## Aim
 
 I want to learn how to write wlroots compositors with this project and keep everything commented to a great extent for others to learn from.
-The wlroots ecosystem is hard to initially get into as per my experience and I want to change that via HerbWM.
+The wlroots ecosystem is hard to initially get into as per my experience and I want to change that via NextWM.
 
 ## Building
 
@@ -28,7 +26,7 @@ The wlroots ecosystem is hard to initially get into as per my experience and I w
 ## Steps
 
 ```bash
-git clone --recursive https://github.com/waycrate/HerbWM;cd HerbWM
+git clone --recursive https://github.com/waycrate/NextWM;cd NextWM
 sudo zig build --prefix/usr/local
 ```
 

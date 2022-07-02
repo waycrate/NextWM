@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD 2-Clause "Simplified" License
 //
-// src/herb.zig
+// src/next.zig
 //
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
@@ -19,7 +19,7 @@ const wlr = @import("wlroots");
 pub var server: Server = undefined;
 
 const usage: []const u8 =
-    \\usage: herb [options]
+    \\usage: next [options]
     \\
     \\  -h, --help                  Print this help message and exit.
     \\  -v, --version               Print the version number and exit.

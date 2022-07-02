@@ -20,7 +20,7 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("zwlr_layer_shell_v1", 4);
 
     // Creating the executable.
-    const exe = builder.addExecutable("herb", "src/herb.zig");
+    const exe = builder.addExecutable("next", "src/next.zig");
 
     // Setting executable target and build mode.
     exe.setTarget(builder.standardTargetOptions(.{}));
@@ -67,10 +67,10 @@ pub fn build(builder: *std.build.Builder) !void {
     exe.linkSystemLibrary("wlroots");
 
     // Install the .desktop file to the prefix.
-    builder.installFile("./herb.desktop", "share/wayland-sessions/herb.desktop");
+    builder.installFile("./next.desktop", "share/wayland-sessions/next.desktop");
 
     // Install the .desktop file to the prefix.
-    builder.installFile("./herb.desktop", "share/wayland-sessions/herb.desktop");
+    builder.installFile("./next.desktop", "share/wayland-sessions/next.desktop");
 
     // Install the binary to the mentioned prefix.
     exe.install();

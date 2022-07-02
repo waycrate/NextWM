@@ -12,7 +12,7 @@ const std = @import("std");
 const os = std.os;
 
 const wl = @import("wayland").server.wl;
-const server = &@import("herb.zig").server;
+const server = &@import("next.zig").server;
 const wlr = @import("wlroots");
 
 server: *Server,
