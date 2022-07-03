@@ -11,9 +11,14 @@ const std = @import("std");
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 const server = &@import("../next.zig").server;
+const allocator = @import("../utils/allocator.zig").allocator;
+
 const Server = @import("../Server.zig");
+const Cursor = @import("Cursor.zig");
+const Keyboard = @import("Keyboard.zig");
 
 server: *Server,
+
 wlr_idle: *wlr.Idle,
 wlr_input_inhibit_manager: *wlr.InputInhibitManager,
 wlr_pointer_constraints: *wlr.PointerConstraintsV1,
@@ -22,7 +27,6 @@ wlr_virtual_pointer_manager: *wlr.VirtualPointerManagerV1,
 wlr_virtual_keyboard_manager: *wlr.VirtualKeyboardManagerV1,
 
 new_input: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(newInput),
-pointer_destroy: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(pointerDestroy),
 
 pub fn init(self: *Self) !void {
     self.* = .{
@@ -40,20 +44,35 @@ pub fn init(self: *Self) !void {
 
 fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
     const self = @fieldParentPtr(Self, "new_input", listener);
-
     switch (input_device.type) {
         .keyboard => {
-            //TODO: Finish this.
+            const keyboard = allocator.create(Keyboard) catch {
+                @panic("Failed to allocate memory");
+            };
+            errdefer allocator.destroy(keyboard);
+
+            keyboard.init(input_device);
         },
         .pointer => {
-            self.server.wlr_cursor.attachInputDevice(input_device);
-            input_device.events.destroy.add(&self.pointer_destroy);
+            const pointer = allocator.create(Cursor) catch {
+                @panic("Failed to allocate memory");
+            };
+            errdefer allocator.destroy(pointer);
+
+            pointer.init(input_device);
         },
         else => {},
     }
+
+    self.setSeatCapabilities();
 }
 
-fn pointerDestroy(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
-    const self = @fieldParentPtr(Self, "pointer_destroy", listener);
-    self.server.wlr_cursor.detachInputDevice(input_device);
+pub fn setSeatCapabilities(self: *Self) void {
+    if (self.server.keyboards.items.len > 0) {
+        self.server.wlr_seat.setCapabilities(.{
+            //TODO: Don't always assume we have a pointer, check this.
+            .pointer = true,
+            .keyboard = true,
+        });
+    }
 }

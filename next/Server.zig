@@ -10,11 +10,13 @@ const Self = @This();
 const std = @import("std");
 
 const allocator = @import("./utils/allocator.zig").allocator;
-const Window = @import("./desktop/Window.zig");
-const Output = @import("./desktop/Output.zig");
-const InputManager = @import("./input/InputManager.zig");
-const Control = @import("./global/Control.zig");
 const c = @import("./utils/c.zig");
+
+const Control = @import("./global/Control.zig");
+const InputManager = @import("./input/InputManager.zig");
+const Keyboard = @import("./input/Keyboard.zig");
+const Output = @import("./desktop/Output.zig");
+const Window = @import("./desktop/Window.zig");
 
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
@@ -43,6 +45,8 @@ sigquit_cb: *wl.EventSource,
 wlr_output_layout: *wlr.OutputLayout,
 new_output: wl.Listener(*wlr.Output),
 outputs: std.ArrayListUnmanaged(*Output),
+
+keyboards: std.ArrayListUnmanaged(*Keyboard),
 
 wlr_xdg_shell: *wlr.XdgShell,
 new_xdg_surface: wl.Listener(*wlr.XdgSurface),
@@ -131,6 +135,9 @@ pub fn init(self: *Self) !void {
 
     // Attach the output layout to the scene graph so we get automatic damage tracking.
     try self.wlr_scene.attachOutputLayout(self.wlr_output_layout);
+
+    // Attach the cursor to the output layout.
+    self.wlr_cursor.attachOutputLayout(self.wlr_output_layout);
 
     // NOTE: These all free themselves when wlr_server is destroy.
     // Create the data device manager from the server, this generally handles the input events such as keyboard, mouse, touch etc.
