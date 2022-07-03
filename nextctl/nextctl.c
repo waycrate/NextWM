@@ -5,8 +5,9 @@
 #include <wayland-client.h>
 
 struct nextctl_state {
-  struct wl_display *wl_display;
-  struct wl_registry *wl_registry;
+  struct wl_display      *wl_display;
+  struct wl_registry     *wl_registry;
+  struct wl_seat         *wl_seat;
   struct next_control_v1 *next_control;
 };
 
@@ -19,7 +20,8 @@ static void registry_handle_global(void *data, struct wl_registry *registry,
   if (strcmp(interface, next_control_v1_interface.name) == 0) {
     state->next_control =
         wl_registry_bind(registry, name, &next_control_v1_interface, 1);
-    printf("Successfully bound to NextControlV1.\n");
+  } else if (strcmp(interface, wl_seat_interface.name) == 0) {
+    state->wl_seat = wl_registry_bind(registry, name, &wl_seat_interface, 1);
   }
 }
 
@@ -45,6 +47,9 @@ int main(int argc, char *argv[]) {
   }
   if (state.next_control == NULL) {
     fputs("ERROR: Compositor doesn't implement next_control_v1.\n", stderr);
+  }
+  if (state.wl_seat == NULL) {
+    fputs("ERROR: Compositor doesn't implement wl_seat.\n", stderr);
   }
   return EXIT_SUCCESS;
 }

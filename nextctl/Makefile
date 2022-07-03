@@ -16,9 +16,6 @@ $(OBJ): $(GEN)
 %.h: %.xml
 	$(SCANNER) client-header < $< > $@
 
-install:
-uninstall:
-
 clean:
 	$(RM) nextctl $(GEN) $(OBJ)
 
