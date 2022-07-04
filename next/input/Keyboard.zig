@@ -15,6 +15,7 @@ const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
 
 const Server = @import("../Server.zig");
+const Cursor = @import("Cursor.zig");
 
 server: *Server,
 
@@ -34,6 +35,10 @@ pub fn init(self: *Self, device: *wlr.InputDevice) void {
         @panic("Failed to allocate memory.");
     };
 
+    //TODO: This should be configurable.
+    self.wlr_keyboard.setRepeatInfo(100, 300);
+
+    self.wlr_keyboard.events.key.add(&self.keyboard_key);
     self.wlr_input_device.events.destroy.add(&self.keyboard_destroy);
 }
 
@@ -52,10 +57,7 @@ fn keyboardKey(listener: *wl.Listener(*wlr.Keyboard.event.Key), event: *wlr.Keyb
     for (keysyms) |sym| {
         // Check if the sym is a modifier.
         if (!(@enumToInt(sym) >= xkb.Keysym.Shift_L and @enumToInt(sym) <= xkb.Keysym.Hyper_R)) {
-            // TODO: Check config to see if the user actually wants this or not.
-            //TODO: IMplement this cursor side.
-            // TODO: Set capabilities on input create and input destroy.
-            //self.server.input_manager.cursor.hide();
+            //TODO: Hide while typing.
         }
     }
 
@@ -65,7 +67,6 @@ fn keyboardKey(listener: *wl.Listener(*wlr.Keyboard.event.Key), event: *wlr.Keyb
 
     self.server.wlr_seat.setKeyboard(self.wlr_input_device);
     self.server.wlr_seat.keyboardNotifyKey(event.time_msec, event.keycode, event.state);
-    //TODO: Finish this.
 }
 
 fn handleCompositorBindings(keysym: xkb.Keysym) bool {

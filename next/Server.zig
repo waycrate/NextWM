@@ -15,6 +15,7 @@ const c = @import("./utils/c.zig");
 const Control = @import("./global/Control.zig");
 const InputManager = @import("./input/InputManager.zig");
 const Keyboard = @import("./input/Keyboard.zig");
+const Cursor = @import("./input/Cursor.zig");
 const Output = @import("./desktop/Output.zig");
 const Window = @import("./desktop/Window.zig");
 
@@ -44,9 +45,10 @@ sigquit_cb: *wl.EventSource,
 
 wlr_output_layout: *wlr.OutputLayout,
 new_output: wl.Listener(*wlr.Output),
-outputs: std.ArrayListUnmanaged(*Output),
 
+outputs: std.ArrayListUnmanaged(*Output),
 keyboards: std.ArrayListUnmanaged(*Keyboard),
+cursors: std.ArrayListUnmanaged(*Cursor),
 
 wlr_xdg_shell: *wlr.XdgShell,
 new_xdg_surface: wl.Listener(*wlr.XdgSurface),

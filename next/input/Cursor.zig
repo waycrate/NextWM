@@ -14,7 +14,6 @@ const server = &@import("../next.zig").server;
 const Server = @import("../Server.zig");
 
 server: *Server,
-hidden: bool = false,
 
 wlr_input_device: *wlr.InputDevice,
 pointer_destroy: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(pointerDestroy),

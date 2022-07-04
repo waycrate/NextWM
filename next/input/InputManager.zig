@@ -61,7 +61,9 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
 
             pointer.init(input_device);
         },
-        else => {},
+        else => {
+            return;
+        },
     }
 
     self.setSeatCapabilities();
