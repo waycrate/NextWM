@@ -2,6 +2,6 @@ zig-cache
 zig-out
 *.o
 *.1
-*.h
+nextctl/next-control-v1.h
 nextctl/next-control-v1.c
 nextctl/nextctl
