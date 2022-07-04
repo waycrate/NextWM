@@ -15,9 +15,10 @@ const wlr = @import("wlroots");
 const zwlr = @import("wayland").server.zwlr;
 
 server: *Server,
-link: wl.list.Link = undefined,
+
 xdg_surface: *wlr.XdgSurface,
 scene_node: *wlr.SceneNode,
+
 map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(map),
 
 pub fn map(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
