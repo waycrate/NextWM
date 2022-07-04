@@ -7,11 +7,12 @@
 
 const Self = @This();
 
-const wl = @import("wayland").server.wl;
-const wlr = @import("wlroots");
+const Server = @import("../Server.zig");
+const allocator = @import("../utils/allocator.zig").allocator;
 const server = &@import("../next.zig").server;
 
-const Server = @import("../Server.zig");
+const wl = @import("wayland").server.wl;
+const wlr = @import("wlroots");
 
 server: *Server,
 
@@ -23,6 +24,10 @@ pub fn init(self: *Self, device: *wlr.InputDevice) void {
         .server = server,
         .wlr_input_device = device,
     };
+    self.server.cursors.append(allocator, self) catch {
+        @panic("Failed to allocate memory");
+    };
+
     self.wlr_input_device.events.destroy.add(&self.pointer_destroy);
 }
 
