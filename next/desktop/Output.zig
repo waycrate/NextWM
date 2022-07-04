@@ -90,3 +90,10 @@ fn handleDestroy(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) v
     }
     //TODO: Move closed monitors clients to focused one.
 }
+
+pub fn getGeometry(self: *Self) [2]c_int {
+    var width: c_int = undefined;
+    var height: c_int = undefined;
+    self.wlr_output.effectiveResolution(&width, &height);
+    return [_]c_int{ width, height };
+}
