@@ -28,6 +28,9 @@ wlr_virtual_keyboard_manager: *wlr.VirtualKeyboardManagerV1,
 
 new_input: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(newInput),
 
+request_set_selection: wl.Listener(*wlr.Seat.event.RequestSetSelection) = wl.Listener(*wlr.Seat.event.RequestSetSelection).init(requestSetSelection),
+request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor) = wl.Listener(*wlr.Seat.event.RequestSetCursor).init(requestSetCursor),
+
 pub fn init(self: *Self) !void {
     self.* = .{
         .server = server,
@@ -40,6 +43,8 @@ pub fn init(self: *Self) !void {
     };
 
     server.wlr_backend.events.new_input.add(&self.new_input);
+    server.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
+    server.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
 }
 
 fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
@@ -67,6 +72,16 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
     }
 
     self.setSeatCapabilities();
+}
+
+fn requestSetSelection(listener: *wl.Listener(*wlr.Seat.event.RequestSetSelection), event: *wlr.Seat.event.RequestSetSelection) void {
+    const self = @fieldParentPtr(Self, "request_set_selection", listener);
+    self.server.wlr_seat.setSelection(event.source, event.serial);
+}
+
+fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
+    const self = @fieldParentPtr(Self, "request_set_cursor", listener);
+    self.server.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
 }
 
 pub fn setSeatCapabilities(self: *Self) void {
