@@ -14,7 +14,8 @@ nextctl
 
 # OPTIONS
 
-TODO
+*-h*
+    Print the help text and exit.
 
 # AUTHORS
 

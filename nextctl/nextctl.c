@@ -23,6 +23,10 @@ int main(int argc, char *argv[]) {
   }
 
   for(int i =1; i< argc; i++){
+      if (strcmp("-h", argv[i]) == 0 || strcmp("--help", argv[i]) == 0) {
+          fputs(usage, stderr);
+          return EXIT_FAILURE;
+      }
       next_control_v1_add_argument(state.next_control, argv[i]);
   }
 
