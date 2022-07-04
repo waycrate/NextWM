@@ -24,6 +24,7 @@ const wlr = @import("wlroots");
 
 const default_cursor_size = 24;
 const default_seat_name = "next-seat0";
+const log = std.log.scoped(.server);
 
 wl_server: *wl.Server,
 wl_event_loop: *wl.EventLoop,
