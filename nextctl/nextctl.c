@@ -22,10 +22,6 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  if (argc == 1){
-    return EXIT_FAILURE;
-  }
-
   for(int i =1; i< argc; i++){
       next_control_v1_add_argument(state.next_control, argv[i]);
   }
@@ -58,7 +54,7 @@ static void next_handle_success(void *data, struct next_command_callback_v1 *cal
 
 static void next_handle_failure(void *data, struct next_command_callback_v1 *callback, const char *failure_message) {
     fprintf(stderr, "Error: %s", failure_message);
-    if(strcmp("Unknown command\n\0", failure_message) == 0) {
+    if(strcmp("Unknown command\n\0", failure_message) == 0 || strcmp("No command provided\n\0", failure_message) == 0) {
         fputs(usage, stderr);
     }
 }
