@@ -1,3 +1,10 @@
+// SPDX-License-Identifier: BSD 2-Clause "Simplified" License
+//
+// build.zig
+//
+// Created by:	Aakash Sen Sharma, May 2022
+// Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
+
 const std = @import("std"); // Zig standard library, duh!
 
 pub fn build(builder: *std.build.Builder) !void {
@@ -25,10 +32,25 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("zwlr_layer_shell_v1", 4);
     scanner.generate("next_control_v1", 1);
 
-    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd ./nextctl;make" });
+    // Version information.
+    const version = "0.2.0";
+
+    // Create build options.
+    const options = builder.addOptions();
+    options.addOption([]const u8, "version", version);
+
+    // Sed command to switch out the version string in nextctl.h file.
+    const sed_version_command = std.fmt.comptimePrint("sed -i 's/^#define VERSION.*/#define VERSION \"{s}\"/' nextctl/nextctl.h", .{version});
+    _ = try builder.exec(&[_][]const u8{ "sh", "-c", sed_version_command });
+
+    // Building nextctl.
+    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "make clean nextctl -C ./nextctl" });
 
     // Creating the executable.
     const exe = builder.addExecutable("next", "next/next.zig");
+
+    // Attaching the build_options to the executable so it's available from the codebase.
+    exe.addOptions("build_options", options);
 
     // Setting executable target and build mode.
     exe.setTarget(builder.standardTargetOptions(.{}));

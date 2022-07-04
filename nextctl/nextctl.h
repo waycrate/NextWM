@@ -11,10 +11,13 @@
 #include <string.h>
 #include <wayland-client.h>
 
+#define VERSION "0.2.0"
+
 #include "next-control-v1.h"
 
 const char usage[] = "Usage: nextctl <command>\n"
                      "  -h, --help      Print this help message and exit.\n\n"
+                     "  -v, --version   Print the version number and exit.\n\n"
                      "Complete documentation for recognized commands can be found in\n"
                      "the nextctl(1) man page.\n";
 

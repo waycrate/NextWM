@@ -5,13 +5,14 @@
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
-const flags = @import("./utils/flags.zig");
 const allocator = @import("./utils/allocator.zig").allocator;
-const std = @import("std");
-const io = std.io;
-const os = std.os;
+const build_options = @import("build_options");
+const flags = @import("./utils/flags.zig");
 const fs = std.fs;
+const io = std.io;
 const mem = std.mem;
+const os = std.os;
+const std = @import("std");
 const log = std.log.scoped(.next);
 
 const Server = @import("Server.zig");
@@ -25,9 +26,10 @@ pub var server: Server = undefined;
 
 // Usage text.
 const usage: []const u8 =
-    \\usage: next [options]
+    \\Usage: next [options]
     \\
     \\  -h, --help                  Print this help message and exit.
+    \\  -v, --version               Print the version number and exit.
     \\  -c <command>                Run `sh -c <command>` on startup.
     \\  -l <level>                  Set the log level:
     \\                                  error, warning, info, or debug
@@ -40,16 +42,24 @@ pub fn main() anyerror!void {
     const result = flags.parse(argv[1..], &[_]flags.Flag{
         .{ .name = "-h", .kind = .boolean },
         .{ .name = "--help", .kind = .boolean },
+        .{ .name = "-v", .kind = .boolean },
+        .{ .name = "--version", .kind = .boolean },
         .{ .name = "-l", .kind = .arg },
         .{ .name = "-c", .kind = .arg },
     }) catch {
         try io.getStdErr().writeAll(usage);
-        os.exit(1);
+        return;
     };
 
     // Print help message if requested.
     if (result.boolFlag("-h") or result.boolFlag("--help")) {
         try io.getStdOut().writeAll(usage);
+        return;
+    }
+
+    // Print version information if requested.
+    if (result.boolFlag("-v") or result.boolFlag("--version")) {
+        try io.getStdOut().writeAll("Next version: " ++ build_options.version ++ "\n");
         return;
     }
 
