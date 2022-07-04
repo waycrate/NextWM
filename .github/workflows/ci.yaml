@@ -22,3 +22,16 @@ jobs:
                   git config --global --add safe.directory /__w/NextWM/NextWM
                   git submodule sync --recursive && git submodule update --init --force --recursive
                   make
+
+    documentation:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+
+            - name: Check documentation
+              run: |
+                  sudo apt update
+                  sudo apt install --no-install-recommends scdoc
+                  for file in $(find . -type f -iname "*.scd"); do scdoc < $file > /dev/null; done

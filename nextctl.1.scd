@@ -15,7 +15,7 @@ nextctl
 # OPTIONS
 
 *-h*
-    Print the help text and exit.
+	Print the help text and exit.
 
 # AUTHORS
 
