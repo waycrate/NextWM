@@ -21,7 +21,7 @@ jobs:
               run: |
                   git config --global --add safe.directory /__w/NextWM/NextWM
                   git submodule sync --recursive && git submodule update --init --force --recursive
-                  make
+                  zig build
 
     documentation:
         runs-on: ubuntu-latest
