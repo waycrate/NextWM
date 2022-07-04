@@ -96,13 +96,15 @@ fn handleRequest(control: *next.ControlV1, request: next.ControlV1.Request, self
                 return;
             };
 
-            const success_message = if (output) |s|
-                allocator.dupeZ(u8, s) catch {
+            var success_message: [:0]const u8 = undefined;
+            if (output) |s| {
+                success_message = allocator.dupeZ(u8, s) catch {
                     callback.getClient().postNoMemory();
                     return;
-                }
-            else
-                "";
+                };
+            } else {
+                success_message = "";
+            }
             defer if (output != null) allocator.free(success_message);
             callback.sendSuccess(success_message);
         },
