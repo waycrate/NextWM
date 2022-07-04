@@ -192,11 +192,6 @@ fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
 }
 
 pub fn deinit(self: *Self) void {
-    self.windows.deinit(allocator);
-    self.outputs.deinit(allocator);
-    self.keyboards.deinit(allocator);
-    self.cursors.deinit(allocator);
-
     self.sigabrt_cb.remove();
     self.sigint_cb.remove();
     self.sigquit_cb.remove();
@@ -208,6 +203,11 @@ pub fn deinit(self: *Self) void {
     self.wlr_backend.destroy();
     self.wlr_renderer.destroy();
     self.wlr_allocator.destroy();
+
+    self.windows.deinit(allocator);
+    self.outputs.deinit(allocator);
+    self.cursors.deinit(allocator);
+    self.keyboards.deinit(allocator);
 
     self.wlr_cursor.destroy();
     self.wlr_xcursor_manager.destroy();
