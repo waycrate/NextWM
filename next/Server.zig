@@ -193,6 +193,9 @@ fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
 
 pub fn deinit(self: *Self) void {
     self.windows.deinit(allocator);
+    self.outputs.deinit(allocator);
+    self.keyboards.deinit(allocator);
+    self.cursors.deinit(allocator);
 
     self.sigabrt_cb.remove();
     self.sigint_cb.remove();
@@ -222,6 +225,7 @@ fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
         std.log.err("Failed to allocate new output", .{});
         return;
     };
+    errdefer allocator.free(output);
 
     // Instantiate the output struct.
     output.init(wlr_output);
@@ -244,6 +248,7 @@ fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgS
             std.log.err("Failed to allocate new view", .{});
             return;
         };
+        errdefer allocator.free(window);
 
         // Populating the window struct with it's members.
         window.* = .{
