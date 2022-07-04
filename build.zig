@@ -97,8 +97,8 @@ pub fn build(builder: *std.build.Builder) !void {
 
 const ScdocStep = struct {
     const scd_paths = [_][]const u8{
-        "doc/next.1.scd",
-        "doc/nextctl.1.scd",
+        "next.1.scd",
+        "nextctl.1.scd",
     };
 
     builder: *std.build.Builder,
