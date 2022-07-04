@@ -41,9 +41,8 @@
     <request name="run_command">
       <description summary="Run the current command">
         Execute the command built up using the add_argument request for the
-        given seat.
+        default seat.
       </description>
-      <arg name="seat" type="object" interface="wl_seat"/>
       <arg name="callback" type="new_id" interface="next_command_callback_v1"
         summary="callback object"/>
     </request>
