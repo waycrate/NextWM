@@ -5,10 +5,10 @@
 #include <wayland-client.h>
 
 struct nextctl_state {
-  struct wl_display      *wl_display;
-  struct wl_registry     *wl_registry;
-  struct wl_seat         *wl_seat;
-  struct next_control_v1 *next_control;
+  struct wl_display                 *wl_display;
+  struct wl_registry                *wl_registry;
+  struct next_control_v1            *next_control;
+  struct next_command_callback_v1   *next_command_callback;
 };
 
 static void noop() {}
@@ -20,14 +20,24 @@ static void registry_handle_global(void *data, struct wl_registry *registry,
   if (strcmp(interface, next_control_v1_interface.name) == 0) {
     state->next_control =
         wl_registry_bind(registry, name, &next_control_v1_interface, 1);
-  } else if (strcmp(interface, wl_seat_interface.name) == 0) {
-    state->wl_seat = wl_registry_bind(registry, name, &wl_seat_interface, 1);
   }
 }
 
 static const struct wl_registry_listener registry_listener = {
-    .global = registry_handle_global,
-    .global_remove = noop,
+    .global         = registry_handle_global,
+    .global_remove  = noop,
+};
+
+static void next_handle_success(void *data, struct next_command_callback_v1 *callback, const char *output) {
+    fputs(output, stdout);
+}
+static void next_handle_failure(void *data, struct next_command_callback_v1 *callback, const char *failure_message) {
+    fputs(failure_message, stdout);
+}
+
+static const struct next_command_callback_v1_listener callback_listener = {
+    .success = next_handle_success,
+    .failure = next_handle_failure,
 };
 
 int main(int argc, char *argv[]) {
@@ -47,9 +57,20 @@ int main(int argc, char *argv[]) {
   }
   if (state.next_control == NULL) {
     fputs("ERROR: Compositor doesn't implement next_control_v1.\n", stderr);
+    return EXIT_FAILURE;
   }
-  if (state.wl_seat == NULL) {
-    fputs("ERROR: Compositor doesn't implement wl_seat.\n", stderr);
+  if (argc == 1){
+    return EXIT_FAILURE;
+  }
+  for(int i =1; i< argc; i++){
+      next_control_v1_add_argument(state.next_control, argv[i]);
+  }
+
+  state.next_command_callback = next_control_v1_run_command(state.next_control);
+  next_command_callback_v1_add_listener(state.next_command_callback, &callback_listener,NULL);
+  if (wl_display_dispatch(state.wl_display) < 0) {
+    fputs("ERROR: wayland dispatch failed.\n", stderr);
+    return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
 }
