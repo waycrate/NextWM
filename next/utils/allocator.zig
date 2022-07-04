@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD 2-Clause "Simplified" License
 //
-// src/utils/allocator.zig
+// next/utils/allocator.zig
 //
 // Created by:	Aakash Sen Sharma, July 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors

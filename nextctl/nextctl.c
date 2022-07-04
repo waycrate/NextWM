@@ -1,3 +1,11 @@
+/* SPDX-License-Identifier: BSD 2-Clause "Simplified" License
+ *
+ * nextctl/nextctl.c
+ *
+ * Created by:	Aakash Sen Sharma, May 2022
+ * Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
+ */
+
 #include "nextctl.h"
 
 int main(int argc, char *argv[]) {
