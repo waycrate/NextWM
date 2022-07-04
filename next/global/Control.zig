@@ -9,10 +9,12 @@ const Self = @This();
 const std = @import("std");
 
 const allocator = @import("../utils/allocator.zig").allocator;
+const command = @import("../control/command.zig");
+const next = @import("wayland").server.next;
 const server = &@import("../next.zig").server;
 
-const next = @import("wayland").server.next;
 const wl = @import("wayland").server.wl;
+const wlr = @import("wlroots");
 
 const ArgMap = std.AutoHashMap(struct { client: *wl.Client, id: u32 }, std.ArrayListUnmanaged([:0]const u8));
 
@@ -48,15 +50,62 @@ fn bind(client: *wl.Client, self: *Self, version: u32, id: u32) callconv(.C) voi
     control.setHandler(*Self, handleRequest, handleDestroy, self);
 }
 
-fn handleRequest(control: *next.ControlV1, request: next.ControlV1.Request, _: *Self) void {
+fn handleRequest(control: *next.ControlV1, request: next.ControlV1.Request, self: *Self) void {
     switch (request) {
         .destroy => control.destroy(),
         .add_argument => |add_argument| {
-            //TODO: Finish this.
-            std.debug.print("{s}", .{add_argument.argument});
+            const slice = allocator.dupeZ(u8, std.mem.span(add_argument.argument)) catch {
+                control.getClient().postNoMemory();
+                return;
+            };
+
+            const arg_map = self.args.getPtr(.{ .client = control.getClient(), .id = control.getId() }).?;
+            arg_map.append(allocator, slice) catch {
+                control.getClient().postNoMemory();
+                allocator.free(slice);
+                return;
+            };
         },
-        //TODO: Finish this
-        else => {},
+        .run_command => |run_command| {
+            const args = self.args.getPtr(.{ .client = control.getClient(), .id = control.getId() }).?;
+            defer {
+                for (args.items) |arg| allocator.free(arg);
+                args.items.len = 0;
+            }
+
+            const callback = next.CommandCallbackV1.create(
+                control.getClient(),
+                control.getVersion(),
+                run_command.callback,
+            ) catch {
+                control.getClient().postNoMemory();
+                return;
+            };
+
+            var output: ?[]const u8 = null;
+            defer if (output) |s| allocator.free(s);
+            command.run(args.items, &output) catch |err| {
+                const failure_message = switch (err) {
+                    command.Error.OutOfMemory => {
+                        callback.getClient().postNoMemory();
+                        return;
+                    },
+                    else => command.errToMsg(err),
+                };
+                callback.sendFailure(failure_message);
+                return;
+            };
+
+            const success_message = if (output) |s|
+                allocator.dupeZ(u8, s) catch {
+                    callback.getClient().postNoMemory();
+                    return;
+                }
+            else
+                "";
+            defer if (output != null) allocator.free(success_message);
+            callback.sendSuccess(success_message);
+        },
     }
 }
 

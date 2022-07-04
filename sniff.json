@@ -1,0 +1,7 @@
+{
+    ".*.zig": ["make"],
+    ".*.c": ["make"],
+    "sniff_ignore_dir": ["zig-out", "zig-cache", ".git"],
+    "sniff_ignore_file": [],
+    "sniff_cooldown": 650
+}
