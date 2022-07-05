@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD 2-Clause "Simplified" License
 //
-// next/global/command/inputs.zig
+// next/global/command/outputs.zig
 //
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
@@ -13,24 +13,24 @@ const allocator = @import("../utils/allocator.zig").allocator;
 
 const Error = @import("command.zig").Error;
 
-pub fn listInputs(
+pub fn listOutputs(
     args: []const [:0]const u8,
     out: *?[]const u8,
 ) !void {
     if (args.len > 1) return Error.TooManyArguments;
 
-    var output = std.ArrayList(u8).init(allocator);
-    const writer = output.writer();
+    var data = std.ArrayList(u8).init(allocator);
+    const writer = data.writer();
 
-    for (server.keyboards.items) |device| {
-        try writer.print("Keyboard: {s}\n", .{
-            device.wlr_input_device.name,
+    for (server.outputs.items) |output| {
+        const geometry = output.getGeometry();
+        try writer.print("{s}\n\tx: {d} y: {d} width: {d} height: {d}\n", .{
+            output.wlr_output.name,
+            geometry[0],
+            geometry[1],
+            geometry[2],
+            geometry[3],
         });
     }
-    for (server.cursors.items) |device| {
-        try writer.print("Pointer: {s}\n", .{
-            device.wlr_input_device.name,
-        });
-    }
-    out.* = output.toOwnedSlice();
+    out.* = data.toOwnedSlice();
 }

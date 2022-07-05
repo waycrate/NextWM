@@ -22,6 +22,8 @@ const commands = std.ComptimeStringMap(
     fn ([]const [:0]const u8, *?[]const u8) Error!void,
     .{
         .{ "list-inputs", @import("inputs.zig").listInputs },
+        .{ "list-outputs", @import("outputs.zig").listOutputs },
+        .{ "exit", @import("exit.zig").exit },
     },
 );
 
