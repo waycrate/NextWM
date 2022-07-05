@@ -116,7 +116,8 @@ pub fn main() anyerror!void {
 
     // Wayland requires XDG_RUNTIME_DIR to be set in order for proper functioning.
     if (os.getenv("XDG_RUNTIME_DIR") == null) {
-        @panic("XDG_RUNTIME_DIR has not been set.");
+        std.log.err("XDG_RUNTIME_DIR has not been set.", .{});
+        return;
     }
 
     // Initializing wlroots log utility with debug level.

@@ -88,7 +88,8 @@ pub fn init(self: *Self) !void {
     // Creating the renderer.
     const drm_fd = self.wlr_backend.getDrmFd();
     if (drm_fd < 0) {
-        @panic("Couldn't query DRM_FD.");
+        log.err("Couldn't query DRM_FD.", .{});
+        return;
     }
     //TODO: Utilize this and write the opengl backend.
     self.wlr_renderer = try wlr.Renderer.createWithDrmFd(drm_fd);

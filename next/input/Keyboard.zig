@@ -13,6 +13,7 @@ const wlr = @import("wlroots");
 const xkb = @import("xkbcommon");
 const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
+const log = std.log.scoped(.Keyboard);
 
 const Server = @import("../Server.zig");
 const Cursor = @import("Cursor.zig");
@@ -26,13 +27,15 @@ keyboard_key: wl.Listener(*wlr.Keyboard.event.Key) = wl.Listener(*wlr.Keyboard.e
 keyboard_destroy: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(keyboardDestroy),
 
 pub fn init(self: *Self, device: *wlr.InputDevice) void {
+    log.debug("Initializing keyboard device", .{});
     self.* = .{
         .server = server,
         .wlr_input_device = device,
         .wlr_keyboard = device.device.keyboard,
     };
     self.server.keyboards.append(allocator, self) catch {
-        @panic("Failed to allocate memory.");
+        log.err("Failed to allocate memory", .{});
+        return;
     };
 
     //TODO: This should be configurable.
@@ -44,6 +47,7 @@ pub fn init(self: *Self, device: *wlr.InputDevice) void {
 
 fn keyboardKey(listener: *wl.Listener(*wlr.Keyboard.event.Key), event: *wlr.Keyboard.event.Key) void {
     const self = @fieldParentPtr(Self, "keyboard_key", listener);
+    log.debug("Signal: wlr_keyboard_key", .{});
 
     self.server.input_manager.wlr_idle.notifyActivity(self.server.wlr_seat);
 

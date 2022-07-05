@@ -12,6 +12,7 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
+const log = std.log.scoped(.InputManager);
 
 const Server = @import("../Server.zig");
 const Cursor = @import("Cursor.zig");
@@ -49,10 +50,14 @@ pub fn init(self: *Self) !void {
 
 fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
     const self = @fieldParentPtr(Self, "new_input", listener);
+
+    log.debug("Signal: wlr_backend_new_input", .{});
+
     switch (input_device.type) {
         .keyboard => {
             const keyboard = allocator.create(Keyboard) catch {
-                @panic("Failed to allocate memory");
+                log.debug("Failed to allocate memory", .{});
+                return;
             };
             errdefer allocator.destroy(keyboard);
 
@@ -60,7 +65,8 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
         },
         .pointer => {
             const pointer = allocator.create(Cursor) catch {
-                @panic("Failed to allocate memory");
+                log.debug("Failed to allocate memory", .{});
+                return;
             };
             errdefer allocator.destroy(pointer);
 
@@ -76,15 +82,18 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
 
 fn requestSetSelection(listener: *wl.Listener(*wlr.Seat.event.RequestSetSelection), event: *wlr.Seat.event.RequestSetSelection) void {
     const self = @fieldParentPtr(Self, "request_set_selection", listener);
+    log.debug("Signal: wlr_seat_request_set_selection", .{});
     self.server.wlr_seat.setSelection(event.source, event.serial);
 }
 
 fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
     const self = @fieldParentPtr(Self, "request_set_cursor", listener);
+    log.debug("Signal: wlr_seat_request_set_cursor", .{});
     self.server.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
 }
 
 pub fn setSeatCapabilities(self: *Self) void {
+    log.debug("Setting seat capabilities", .{});
     if (self.server.keyboards.items.len > 0) {
         self.server.wlr_seat.setCapabilities(.{
             //TODO: Don't always assume we have a pointer, check this.

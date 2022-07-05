@@ -53,7 +53,8 @@ pub fn init(xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
         .xdg_toplevel = self,
     });
     self.server.pending_windows.append(allocator, window) catch {
-        @panic("Failed to allocate memory");
+        log.err("Failed to allocate memory", .{});
+        return;
     };
 
     xdg_surface.events.map.add(&window.map);

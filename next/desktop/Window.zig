@@ -44,7 +44,8 @@ pub fn map(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
         _ = self.server.pending_windows.orderedRemove(i);
 
         self.server.mapped_windows.append(allocator, self) catch {
-            @panic("Failed to allocate memory.");
+            log.err("Failed to allocate memory.", .{});
+            return;
         };
     }
 }

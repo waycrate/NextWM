@@ -11,6 +11,7 @@ const allocator = @import("../utils/allocator.zig").allocator;
 
 const std = @import("std");
 const os = std.os;
+const log = std.log.scoped(.Output);
 
 const wl = @import("wayland").server.wl;
 const server = &@import("../next.zig").server;
@@ -50,7 +51,8 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
     // Add the new output to the output_layout for automatic layout management by wlroots.
     self.server.wlr_output_layout.addAuto(self.wlr_output);
     self.server.outputs.append(allocator, self) catch {
-        @panic("Failed to allocate memory.");
+        log.err("Failed to allocate memory.", .{});
+        return;
     };
 }
 
@@ -67,7 +69,10 @@ fn handleFrame(listener: *wl.Listener(*wlr.OutputDamage), _: *wlr.OutputDamage) 
 
     // Get current time as the FrameDone event requires it.
     var now: os.timespec = undefined;
-    os.clock_gettime(os.CLOCK.MONOTONIC, &now) catch @panic("CLOCK_MONOTONIC not supported");
+    os.clock_gettime(os.CLOCK.MONOTONIC, &now) catch {
+        log.err("CLOCK_MONOTONIC not supported", .{});
+        return;
+    };
 
     // Send the FrameDone event.
     scene_output.sendFrameDone(&now);
