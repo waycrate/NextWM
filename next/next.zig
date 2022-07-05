@@ -64,6 +64,8 @@ pub fn main() anyerror!void {
     }
 
     // Fetch the log level specified or fallback to err.
+    // TODO: https://github.com/waycrate/NextWM/issues/1
+    // This needs to undergo a complete rewrite.
     var log_level: std.log.Level = .err;
     if (result.argFlag("-l")) |level| {
         if (mem.eql(u8, level, std.log.Level.err.asText())) {
