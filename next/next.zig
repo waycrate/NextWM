@@ -13,7 +13,7 @@ const io = std.io;
 const mem = std.mem;
 const os = std.os;
 const std = @import("std");
-const log = std.log.scoped(.next);
+const log = std.log.scoped(.Next);
 
 const Server = @import("Server.zig");
 
@@ -142,5 +142,6 @@ pub fn main() anyerror!void {
     try child.spawn();
 
     // Run the server!
+    log.info("Running NextWM event loop", .{});
     server.wl_server.run();
 }

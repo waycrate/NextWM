@@ -17,6 +17,7 @@ const InputManager = @import("./input/InputManager.zig");
 const Keyboard = @import("./input/Keyboard.zig");
 const Cursor = @import("./input/Cursor.zig");
 const Output = @import("./desktop/Output.zig");
+const XdgToplevel = @import("./desktop/XdgToplevel.zig");
 const Window = @import("./desktop/Window.zig");
 
 const wl = @import("wayland").server.wl;
@@ -24,7 +25,7 @@ const wlr = @import("wlroots");
 
 const default_cursor_size = 24;
 const default_seat_name = "next-seat0";
-const log = std.log.scoped(.server);
+const log = std.log.scoped(.Server);
 
 wl_server: *wl.Server,
 wl_event_loop: *wl.EventLoop,
@@ -53,7 +54,8 @@ cursors: std.ArrayListUnmanaged(*Cursor),
 
 wlr_xdg_shell: *wlr.XdgShell,
 new_xdg_surface: wl.Listener(*wlr.XdgSurface),
-windows: std.ArrayListUnmanaged(*Window),
+mapped_windows: std.ArrayListUnmanaged(*Window),
+pending_windows: std.ArrayListUnmanaged(*Window),
 
 wlr_layer_shell: *wlr.LayerShellV1,
 new_layer_surface: wl.Listener(*wlr.LayerSurfaceV1),
@@ -184,15 +186,19 @@ pub fn start(self: *Self) !void {
     if (c.setenv("DISPLAY", self.wlr_xwayland.display_name, 1) < 0) return error.SetenvError;
 
     try self.wlr_backend.start();
+    log.info("Starting NextWM on {s}", .{socket});
+    log.info("Xwayland initialized at {s}", .{self.wlr_xwayland.display_name});
 }
 
 // This is called to gracefully handle signals.
 fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
+    log.info("Termination event loop.", .{});
     wl_server.terminate();
     return 0;
 }
 
 pub fn deinit(self: *Self) void {
+    log.info("Cleaning up server resources", .{});
     self.sigabrt_cb.remove();
     self.sigint_cb.remove();
     self.sigquit_cb.remove();
@@ -205,7 +211,8 @@ pub fn deinit(self: *Self) void {
     self.wlr_renderer.destroy();
     self.wlr_allocator.destroy();
 
-    self.windows.deinit(allocator);
+    self.mapped_windows.deinit(allocator);
+    self.pending_windows.deinit(allocator);
     self.outputs.deinit(allocator);
     self.cursors.deinit(allocator);
     self.keyboards.deinit(allocator);
@@ -217,11 +224,13 @@ pub fn deinit(self: *Self) void {
 
     // Destroy the server.
     self.wl_server.destroy();
+    log.info("Exiting NextWM...", .{});
 }
 
 // Callback that gets triggered on existence of a new output.
 fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
     // Allocate memory to a new instance of output struct.
+    log.debug("Signal: wlr_backend_new_output", .{});
     const output = allocator.create(Output) catch {
         std.log.err("Failed to allocate new output", .{});
         return;
@@ -233,49 +242,28 @@ fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
 }
 
 // This callback is called when a new xdg toplevel is created ( xdg toplevels are basically application windows. )
-fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface) void {
-    // Getting the server out of the listener. Field Parent Pointer - get a pointer to the parent struct from a field.
-    const self = @fieldParentPtr(Self, "new_xdg_surface", listener);
-
+fn newXdgSurface(_: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface) void {
     // The role of the surface can be of 2 types:
     // - xdg_toplevel
     // - xdg_popup
     //
     // Popups include context menus and other floating windows that are in respect to any particular toplevel.
     // We only want to manage toplevel here, popups will be managed separately.
-    if (xdg_surface.role == .toplevel) {
-        // Allocate enough memory for the "Window" object
-        const window = allocator.create(Window) catch {
-            std.log.err("Failed to allocate new view", .{});
-            return;
-        };
-        errdefer allocator.free(window);
-
-        // Populating the window struct with it's members.
-        window.* = .{
-            .server = self,
-            .xdg_surface = xdg_surface,
-            // wlr scene graph API is a simple API that gives us damage tracking for free.
-            // A.K.A less work to do, so we simply use it.
-            // If you don't know what damage tracking is -> https://emersion.fr/blog/2019/intro-to-damage-tracking/
-            // NOTE: We mght need to switch over from scene_node to manual rendering for opengl backend.
-            // If you're wondering what that's for, it'll basically exist to provide sexy dual kawase blur.
-            .scene_node = self.wlr_scene.node.createSceneXdgSurface(xdg_surface) catch {
-                // If we fail then the free the memory we allocated earlier.
-                allocator.destroy(window);
-                std.log.err("Failed to allocate new view", .{});
+    log.debug("Signal: wlr_xdg_shell_new_surface", .{});
+    switch (xdg_surface.role) {
+        .toplevel => {
+            XdgToplevel.init(xdg_surface) catch {
+                log.err("Failed to allocate memory", .{});
+                xdg_surface.resource.postNoMemory();
                 return;
-            },
-        };
-        window.scene_node.data = @ptrToInt(window);
-        xdg_surface.data = @ptrToInt(window.scene_node);
-
-        xdg_surface.events.map.add(&window.map);
-        //xdg_surface.events.unmap.add(&view.unmap);
+            };
+        },
+        else => {},
     }
 }
 
 // This callback is called when a new layer surface is created.
 pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), _: *wlr.LayerSurfaceV1) void {
-    //TODO: Populate this.
+    log.debug("Signal: wlr_layer_shell_new_surface", .{});
+    //TODO: Populate this
 }
