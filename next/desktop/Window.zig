@@ -39,14 +39,12 @@ pub fn init(self: *Self, backend: Backend) void {
 pub fn map(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
     const self = @fieldParentPtr(Self, "map", listener);
 
-    // Iterate over available pending_windows and remove it, then proceed to put it into mapped_windows.
-    for (self.server.pending_windows.items) |value, i| {
-        if (value == self) {
-            _ = self.server.pending_windows.orderedRemove(i);
-            self.server.mapped_windows.append(allocator, self) catch {
-                @panic("Failed to allocate memory.");
-            };
-            break;
-        }
+    // Find index of self from pending_windows and remove it.
+    if (std.mem.indexOfScalar(*Self, self.server.pending_windows.items, self)) |i| {
+        _ = self.server.pending_windows.orderedRemove(i);
+
+        self.server.mapped_windows.append(allocator, self) catch {
+            @panic("Failed to allocate memory.");
+        };
     }
 }

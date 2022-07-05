@@ -81,12 +81,9 @@ fn handleDestroy(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) v
     // Remove the output from the global compositor output layout.
     self.server.wlr_output_layout.remove(wlr_output);
 
-    // Iterate over available windows and remove the current output.
-    for (self.server.outputs.items) |value, i| {
-        if (value.wlr_output == self.wlr_output) {
-            _ = self.server.outputs.orderedRemove(i);
-            break;
-        }
+    // Find index of self from outputs and remove it.
+    if (std.mem.indexOfScalar(*Self, self.server.outputs.items, self)) |i| {
+        _ = self.server.outputs.orderedRemove(i);
     }
     //TODO: Move closed monitors clients to focused one.
 }

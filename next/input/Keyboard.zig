@@ -88,12 +88,10 @@ fn handleCompositorBindings(keysym: xkb.Keysym) bool {
 
 fn keyboardDestroy(listener: *wl.Listener(*wlr.InputDevice), _: *wlr.InputDevice) void {
     const self = @fieldParentPtr(Self, "keyboard_destroy", listener);
+    log.debug("Signal: wlr_input_device_destroy (keyboard)", .{});
 
-    for (self.server.keyboards.items) |value, i| {
-        if (value.wlr_input_device == self.wlr_input_device) {
-            _ = self.server.keyboards.orderedRemove(i);
-            break;
-        }
+    if (std.mem.indexOfScalar(*Self, self.server.keyboards.items, self)) |i| {
+        _ = self.server.keyboards.orderedRemove(i);
     }
 
     self.server.input_manager.setSeatCapabilities();
