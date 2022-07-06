@@ -5,11 +5,10 @@
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
-const Self = @This();
-
 const std = @import("std");
-const wlr = @import("wlroots");
 const assert = std.debug.assert;
+
+const wlr = @import("wlroots");
 
 pub const Error = error{
     NoCommand,

@@ -6,8 +6,8 @@
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const Self = @This();
-const std = @import("std");
 
+const std = @import("std");
 const allocator = @import("../utils/allocator.zig").allocator;
 const command = @import("../control/command.zig");
 const next = @import("wayland").server.next;

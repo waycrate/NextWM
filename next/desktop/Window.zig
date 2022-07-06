@@ -7,16 +7,17 @@
 
 const Self = @This();
 
-const Server = @import("../Server.zig");
-const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
-const XdgToplevel = @import("XdgToplevel.zig");
-const std = @import("std");
 const log = std.log.scoped(.Window);
+const server = &@import("../next.zig").server;
+const std = @import("std");
 
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 const zwlr = @import("wayland").server.zwlr;
+
+const Server = @import("../Server.zig");
+const XdgToplevel = @import("XdgToplevel.zig");
 
 const Backend = union(enum) {
     xdg_toplevel: XdgToplevel,

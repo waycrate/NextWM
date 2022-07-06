@@ -7,10 +7,13 @@
 
 const Self = @This();
 
-const std = @import("std");
-
 const allocator = @import("./utils/allocator.zig").allocator;
 const c = @import("./utils/c.zig");
+const log = std.log.scoped(.Server);
+const std = @import("std");
+
+const wl = @import("wayland").server.wl;
+const wlr = @import("wlroots");
 
 const Control = @import("./global/Control.zig");
 const InputManager = @import("./input/InputManager.zig");
@@ -20,12 +23,8 @@ const Output = @import("./desktop/Output.zig");
 const XdgToplevel = @import("./desktop/XdgToplevel.zig");
 const Window = @import("./desktop/Window.zig");
 
-const wl = @import("wayland").server.wl;
-const wlr = @import("wlroots");
-
 const default_cursor_size = 24;
 const default_seat_name = "next-seat0";
-const log = std.log.scoped(.Server);
 
 wl_server: *wl.Server,
 wl_event_loop: *wl.EventLoop,

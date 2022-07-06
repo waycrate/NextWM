@@ -7,6 +7,7 @@
 
 const std = @import("std");
 const server = &@import("../next.zig").server;
+
 const Error = @import("command.zig").Error;
 
 pub fn exit(

@@ -6,10 +6,10 @@
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const std = @import("std");
-
-const wlr = @import("wlroots");
 const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
+
+const wlr = @import("wlroots");
 
 const Error = @import("command.zig").Error;
 

@@ -7,12 +7,13 @@
 
 const Self = @This();
 
-const std = @import("std");
-const wl = @import("wayland").server.wl;
-const wlr = @import("wlroots");
-const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
 const log = std.log.scoped(.InputManager);
+const server = &@import("../next.zig").server;
+const std = @import("std");
+
+const wl = @import("wayland").server.wl;
+const wlr = @import("wlroots");
 
 const Server = @import("../Server.zig");
 const Cursor = @import("Cursor.zig");

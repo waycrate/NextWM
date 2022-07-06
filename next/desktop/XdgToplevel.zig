@@ -7,16 +7,16 @@
 
 const Self = @This();
 
-const std = @import("std");
-
-const Window = @import("Window.zig");
-const Server = @import("../Server.zig");
-const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
+const log = std.log.scoped(.XdgToplevel);
+const server = &@import("../next.zig").server;
+const std = @import("std");
 
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
-const log = std.log.scoped(.XdgToplevel);
+
+const Server = @import("../Server.zig");
+const Window = @import("Window.zig");
 
 server: *Server,
 

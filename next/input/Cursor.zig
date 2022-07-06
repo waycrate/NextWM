@@ -8,13 +8,14 @@
 const Self = @This();
 
 const std = @import("std");
-const Server = @import("../Server.zig");
 const allocator = @import("../utils/allocator.zig").allocator;
 const server = &@import("../next.zig").server;
 const log = std.log.scoped(.Cursor);
 
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
+
+const Server = @import("../Server.zig");
 
 server: *Server,
 

@@ -14,11 +14,11 @@ const mem = std.mem;
 const os = std.os;
 const std = @import("std");
 
-const Server = @import("Server.zig");
-
 // Wl namespace for server-side libwayland bindings.
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
+
+const Server = @import("Server.zig");
 
 // Server is a public global as we import it in some other files.
 pub var server: Server = undefined;

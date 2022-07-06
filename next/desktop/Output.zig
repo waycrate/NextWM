@@ -6,16 +6,17 @@
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const Self = @This();
-const Server = @import("../Server.zig");
-const allocator = @import("../utils/allocator.zig").allocator;
 
-const std = @import("std");
-const os = std.os;
+const allocator = @import("../utils/allocator.zig").allocator;
 const log = std.log.scoped(.Output);
+const os = std.os;
+const server = &@import("../next.zig").server;
+const std = @import("std");
 
 const wl = @import("wayland").server.wl;
-const server = &@import("../next.zig").server;
 const wlr = @import("wlroots");
+
+const Server = @import("../Server.zig");
 
 server: *Server,
 
