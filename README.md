@@ -4,6 +4,10 @@ Manual tiling wayland compositor written with wlroots aimed to be a bspwm clone.
 
 Note: NextWM is still a work in progress project. It won't be useable anytime soon, but when it is I will be the first one to spam screenshots of it in the readme.
 
+## License:
+
+The entire project is licensed as BSD-2 "Simplified" unless stated otherwise in the file header.
+
 ## Aim
 
 I want to learn how to write wlroots compositors with this project and keep everything commented to a great extent for others to learn from.
@@ -33,5 +37,5 @@ sudo make install
 
 ## Support
 
-- https://matrix.to/#/#waycrate-tools:matrix.org
-- https://discord.gg/KKZRDYrRYW
+-   https://matrix.to/#/#waycrate-tools:matrix.org
+-   https://discord.gg/KKZRDYrRYW
