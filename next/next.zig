@@ -13,7 +13,6 @@ const io = std.io;
 const mem = std.mem;
 const os = std.os;
 const std = @import("std");
-const log = std.log.scoped(.Next);
 
 const Server = @import("Server.zig");
 
@@ -23,6 +22,10 @@ const wlr = @import("wlroots");
 
 // Server is a public global as we import it in some other files.
 pub var server: Server = undefined;
+
+// Tell std.log to leave log_level filtering to us.
+pub const log_level: std.log.Level = .debug;
+pub var runtime_log_level: std.log.Level = .err;
 
 // Usage text.
 const usage: []const u8 =
@@ -63,21 +66,18 @@ pub fn main() anyerror!void {
         return;
     }
 
-    // Fetch the log level specified or fallback to err.
-    // TODO: https://github.com/waycrate/NextWM/issues/1
-    // This needs to undergo a complete rewrite.
-    var log_level: std.log.Level = .err;
+    // Fetch the log level specified or fallback to info.
     if (result.argFlag("-l")) |level| {
         if (mem.eql(u8, level, std.log.Level.err.asText())) {
-            log_level = .err;
+            runtime_log_level = .err;
         } else if (mem.eql(u8, level, std.log.Level.warn.asText())) {
-            log_level = .warn;
+            runtime_log_level = .warn;
         } else if (mem.eql(u8, level, std.log.Level.info.asText())) {
-            log_level = .info;
+            runtime_log_level = .info;
         } else if (mem.eql(u8, level, std.log.Level.debug.asText())) {
-            log_level = .debug;
+            runtime_log_level = .debug;
         } else {
-            log.err("Invalid log level '{s}'", .{level});
+            std.log.err("Invalid log level '{s}'", .{level});
             try io.getStdErr().writeAll(usage);
             return;
         }
@@ -108,10 +108,10 @@ pub fn main() anyerror!void {
             // R_OK stands for the readable bit
             if (os.accessZ(startup_command, os.R_OK)) {
                 // If the file is readable but cannot be executed then it must not have the execution bit set.
-                log.err("Failed to run nextrc file: {s}\nPlease mark the file executable with the following command:\n    chmod +x {s}", .{ startup_command, startup_command });
+                std.log.err("Failed to run nextrc file: {s}\nPlease mark the file executable with the following command:\n    chmod +x {s}", .{ startup_command, startup_command });
                 return;
             } else |_| {}
-            log.err("Failed to run nextrc file: {s}\n{s}", .{ startup_command, @errorName(err) });
+            std.log.err("Failed to run nextrc file: {s}\n{s}", .{ startup_command, @errorName(err) });
             return;
         }
     };
@@ -123,14 +123,14 @@ pub fn main() anyerror!void {
     }
 
     // Initializing wlroots log utility with debug level.
-    wlr.log.init(switch (log_level) {
+    wlr.log.init(switch (runtime_log_level) {
         .debug => .debug,
         .info => .info,
         .warn, .err => .err,
     });
 
     // Attempt to initialize the server, deinitialize it once the block ends.
-    log.info("Initializing server", .{});
+    std.log.info("Initializing server", .{});
     try server.init();
     defer server.deinit();
     try server.start();
@@ -145,6 +145,33 @@ pub fn main() anyerror!void {
     try child.spawn();
 
     // Run the server!
-    log.info("Running NextWM event loop", .{});
+    std.log.info("Running NextWM event loop", .{});
     server.wl_server.run();
+}
+
+// Custom logging function.
+pub fn log(
+    comptime level: std.log.Level,
+    comptime scope: @TypeOf(.EnumLiteral),
+    comptime format: []const u8,
+    args: anytype,
+) void {
+    // If level of the message is higher than the message level specified then don't log it.
+    if (@enumToInt(level) > @enumToInt(runtime_log_level)) return;
+
+    // Performing some string formatting and then printing it.
+    const level_txt = comptime toUpper(level.asText()) ++ " ";
+    const scope_txt = "[" ++ @tagName(scope) ++ "] ";
+
+    const stderr = io.getStdErr().writer();
+    stderr.print(scope_txt ++ level_txt ++ format ++ "\n", args) catch {};
+}
+
+// Takes a string, uppercases it and returns a sentinel terminated string.
+fn toUpper(comptime string: []const u8) *const [string.len:0]u8 {
+    comptime {
+        var tmp: [string.len:0]u8 = undefined;
+        for (tmp) |*char, i| char.* = std.ascii.toUpper(string[i]);
+        return &tmp;
+    }
 }
