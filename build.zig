@@ -17,6 +17,7 @@ pub fn build(builder: *std.build.Builder) !void {
 
     scanner.addProtocolPath("protocols/next-control-v1.xml");
     scanner.addProtocolPath("protocols/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml");
+    scanner.addProtocolPath("protocols/wlr-protocols/unstable/wlr-output-power-management-unstable-v1.xml");
 
     // Generating the bindings we require, we need to manually update this.
     scanner.generate("wl_compositor", 4);
@@ -25,11 +26,12 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("wl_output", 4);
     scanner.generate("wl_seat", 7);
     scanner.generate("wl_data_device_manager", 3);
+    scanner.generate("xdg_wm_base", 2);
 
+    scanner.generate("zwlr_layer_shell_v1", 4);
+    scanner.generate("zwlr_output_power_manager_v1", 1);
     scanner.generate("zwp_pointer_constraints_v1", 1);
 
-    scanner.generate("xdg_wm_base", 2);
-    scanner.generate("zwlr_layer_shell_v1", 4);
     scanner.generate("next_control_v1", 1);
 
     // Version information.

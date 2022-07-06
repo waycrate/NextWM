@@ -16,12 +16,13 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Control = @import("./global/Control.zig");
+const Cursor = @import("./input/Cursor.zig");
+const DecorationManager = @import("./desktop/DecorationManager.zig");
 const InputManager = @import("./input/InputManager.zig");
 const Keyboard = @import("./input/Keyboard.zig");
-const Cursor = @import("./input/Cursor.zig");
 const Output = @import("./desktop/Output.zig");
-const XdgToplevel = @import("./desktop/XdgToplevel.zig");
 const Window = @import("./desktop/Window.zig");
+const XdgToplevel = @import("./desktop/XdgToplevel.zig");
 
 const default_cursor_size = 24;
 const default_seat_name = "next-seat0";
@@ -35,8 +36,9 @@ wlr_allocator: *wlr.Allocator,
 wlr_scene: *wlr.Scene,
 wlr_compositor: *wlr.Compositor,
 
-input_manager: InputManager,
 control: Control,
+decoration_manager: DecorationManager,
+input_manager: InputManager,
 
 sigint_cb: *wl.EventSource,
 sigterm_cb: *wl.EventSource,
@@ -58,6 +60,9 @@ pending_windows: std.ArrayListUnmanaged(*Window),
 
 wlr_layer_shell: *wlr.LayerShellV1,
 new_layer_surface: wl.Listener(*wlr.LayerSurfaceV1),
+
+wlr_power_manager: *wlr.OutputPowerManagerV1,
+set_mode: wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode),
 
 wlr_seat: *wlr.Seat,
 wlr_cursor: *wlr.Cursor,
@@ -130,6 +135,11 @@ pub fn init(self: *Self) !void {
     // such as wallpapers and bars which are drawn *over* other windows.
     self.wlr_layer_shell = try wlr.LayerShellV1.create(self.wl_server);
 
+    // Creating the OutputPowerV1 protocol manager. This protocol is used by
+    // tools such as wayout (https://github.com/waycrate/wayout) which manage output states
+    // (on / off).
+    self.wlr_power_manager = try wlr.OutputPowerManagerV1.create(self.wl_server);
+
     // Initializing Xwayland.
     // True here indicates that Xwayland will be launched on demand.
     self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, true);
@@ -153,8 +163,9 @@ pub fn init(self: *Self) !void {
     _ = try wlr.ScreencopyManagerV1.create(self.wl_server);
     _ = try wlr.Viewporter.create(self.wl_server);
 
-    try self.input_manager.init();
     try self.control.init();
+    try self.decoration_manager.init();
+    try self.input_manager.init();
 
     // Assign the new output callback to said event.
     //
@@ -164,11 +175,12 @@ pub fn init(self: *Self) !void {
     self.wlr_backend.events.new_output.add(&self.new_output);
 
     // Add a callback for when new surfaces are created.
-    //
-    // zig only intializes structs with default value when using .{} notation. Since were not using that, we call `.setNotify`. In other instances
-    // we use `.init` on the listener declaration directly.
     self.new_xdg_surface.setNotify(newXdgSurface);
     self.wlr_xdg_shell.events.new_surface.add(&self.new_xdg_surface);
+
+    // Add a callback for when clients want to set output power mode.
+    self.set_mode.setNotify(setMode);
+    self.wlr_power_manager.events.set_mode.add(&self.set_mode);
 
     // Add a callback for when a new layer surface is created.
     self.new_layer_surface.setNotify(newLayerSurface);
@@ -266,4 +278,21 @@ fn newXdgSurface(_: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface)
 pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), _: *wlr.LayerSurfaceV1) void {
     log.debug("Signal: wlr_layer_shell_new_surface", .{});
     //TODO: Populate this
+}
+
+// Callback that gets triggered on existence of a new output.
+fn setMode(_: *wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode), event: *wlr.OutputPowerManagerV1.event.SetMode) void {
+    const mode = event.mode == .on;
+    const state = if (mode) "Enabling" else "Disabling";
+    log.debug(
+        "{s} output {s}",
+        .{
+            state,
+            event.output.name,
+        },
+    );
+    event.output.enable(mode);
+    event.output.commit() catch {
+        log.err("Output commit failed: {s}", .{event.output.name});
+    };
 }
