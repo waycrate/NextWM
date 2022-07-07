@@ -35,6 +35,10 @@ git clone --recursive https://github.com/waycrate/NextWM;cd NextWM
 sudo make install
 ```
 
+## Keybind handling
+
+Consider using the compositors in-built key mapper or [swhkd](https://github.com/shinyzenith/swhkd) if you're looking for a sxhkd like experience.
+
 ## Support
 
 -   https://matrix.to/#/#waycrate-tools:matrix.org
