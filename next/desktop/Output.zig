@@ -28,6 +28,8 @@ destroy: wl.Listener(*wlr.Output) = wl.Listener(*wlr.Output).init(handleDestroy)
 
 // This callback prepares the output object to accept listeners.
 pub fn init(self: *Self, wlr_output: *wlr.Output) void {
+    log.debug("Initializing output device", .{});
+
     // Configure the output detected by the backend to use our allocator and renderer.
     if (!wlr_output.initRender(server.wlr_allocator, server.wlr_renderer)) return;
 
@@ -61,6 +63,7 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
 fn handleFrame(listener: *wl.Listener(*wlr.OutputDamage), _: *wlr.OutputDamage) void {
     // Get the parent struct, Output.
     const self = @fieldParentPtr(Self, "frame", listener);
+    log.debug("Signal: wlr_output_damage_frame", .{});
 
     // Get the scene output with respect to the wlr.Output object that's being passed.
     const scene_output = self.server.wlr_scene.getSceneOutput(self.wlr_output).?;
@@ -83,6 +86,7 @@ fn handleFrame(listener: *wl.Listener(*wlr.OutputDamage), _: *wlr.OutputDamage) 
 fn handleDestroy(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
     // Get the parent struct, Output.
     const self = @fieldParentPtr(Self, "destroy", listener);
+    log.debug("Signal: wlr_output_destroy", .{});
 
     // Remove the output from the global compositor output layout.
     self.server.wlr_output_layout.remove(wlr_output);
