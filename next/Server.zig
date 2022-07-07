@@ -90,13 +90,7 @@ pub fn init(self: *Self) !void {
     self.wlr_headless_backend = try wlr.Backend.createHeadless(self.wl_server);
 
     // Creating the renderer.
-    const drm_fd = self.wlr_backend.getDrmFd();
-    if (drm_fd < 0) {
-        log.err("Couldn't query DRM_FD.", .{});
-        return;
-    }
-    //TODO: Utilize this and write the opengl backend.
-    self.wlr_renderer = try wlr.Renderer.createWithDrmFd(drm_fd);
+    self.wlr_renderer = try wlr.Renderer.autocreate(self.wlr_backend);
     errdefer self.wlr_renderer.destroy();
 
     // Autocreate an allocator. An allocator acts as a bridge between the renderer and the backend allowing us to render to the screen by handling buffer creation.

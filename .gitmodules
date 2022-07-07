@@ -7,9 +7,9 @@
 [submodule "deps/zig-xkbcommon"]
 	path = deps/zig-xkbcommon
 	url = https://github.com/ifreund/zig-xkbcommon
-[submodule "deps/zig-wlroots"]
-	path = deps/zig-wlroots
-	url = https://github.com/shinyzenith/zig-wlroots
 [submodule "protocols/wlr-protocols"]
 	path = protocols/wlr-protocols
 	url = https://gitlab.freedesktop.org/wlroots/wlr-protocols
+[submodule "deps/zig-wlroots"]
+	path = deps/zig-wlroots
+	url = https://github.com/swaywm/zig-wlroots.git
