@@ -34,8 +34,9 @@ const usage: []const u8 =
     \\  -h, --help                  Print this help message and exit.
     \\  -v, --version               Print the version number and exit.
     \\  -c <command>                Run `sh -c <command>` on startup.
+    \\  -d                          Set log level to debug mode.
     \\  -l <level>                  Set the log level:
-    \\                                  error, warning, info, or debug
+    \\                                  error, warning, info, or debug.
     \\
 ;
 
@@ -43,12 +44,13 @@ pub fn main() anyerror!void {
     //NOTE: https://github.com/ziglang/zig/issues/7807
     const argv: [][*:0]const u8 = os.argv;
     const result = flags.parse(argv[1..], &[_]flags.Flag{
-        .{ .name = "-h", .kind = .boolean },
         .{ .name = "--help", .kind = .boolean },
-        .{ .name = "-v", .kind = .boolean },
         .{ .name = "--version", .kind = .boolean },
-        .{ .name = "-l", .kind = .arg },
         .{ .name = "-c", .kind = .arg },
+        .{ .name = "-d", .kind = .boolean },
+        .{ .name = "-h", .kind = .boolean },
+        .{ .name = "-l", .kind = .arg },
+        .{ .name = "-v", .kind = .boolean },
     }) catch {
         try io.getStdErr().writeAll(usage);
         return;
@@ -64,6 +66,10 @@ pub fn main() anyerror!void {
     if (result.boolFlag("-v") or result.boolFlag("--version")) {
         try io.getStdOut().writeAll("Next version: " ++ build_options.version ++ "\n");
         return;
+    }
+
+    if (result.boolFlag("-d")) {
+        runtime_log_level = .debug;
     }
 
     // Fetch the log level specified or fallback to info.
