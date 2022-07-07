@@ -150,10 +150,11 @@ pub fn init(self: *Self) !void {
 
     // NOTE: These all free themselves when wlr_server is destroy.
     // Create the data device manager from the server, this generally handles the input events such as keyboard, mouse, touch etc.
-    _ = try wlr.DataDeviceManager.create(self.wl_server);
     _ = try wlr.DataControlManagerV1.create(self.wl_server);
+    _ = try wlr.DataDeviceManager.create(self.wl_server);
     _ = try wlr.ExportDmabufManagerV1.create(self.wl_server);
     _ = try wlr.GammaControlManagerV1.create(self.wl_server);
+    _ = try wlr.PrimarySelectionDeviceManagerV1.create(self.wl_server);
     _ = try wlr.ScreencopyManagerV1.create(self.wl_server);
     _ = try wlr.Viewporter.create(self.wl_server);
 
