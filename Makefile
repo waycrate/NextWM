@@ -12,8 +12,8 @@ fast:
 small:
 	zig build -Drelease-small
 
-install: build
-	zig build --prefix $(PREFIX)
+install:
+	zig build -Drelease-safe --prefix $(PREFIX)
 
 uninstall:
 	$(RM) $(PREFIX)/bin/next
