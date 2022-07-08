@@ -7,12 +7,17 @@
 
 const Self = @This();
 
-const std = @import("std");
-const server = &@import("../next.zig").server;
+const allocator = @import("../utils/allocator.zig").allocator;
 const log = std.log.scoped(.DecorationManager);
+const server = &@import("../next.zig").server;
+const std = @import("std");
 
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
+
+const Decoration = @import("Decoration.zig");
+
+decorations: std.TailQueue(Decoration) = .{},
 
 xdg_decoration_manager: *wlr.XdgDecorationManagerV1,
 
@@ -25,8 +30,14 @@ pub fn init(self: *Self) !void {
     self.xdg_decoration_manager.events.new_toplevel_decoration.add(&self.new_toplevel_decoration);
 }
 
-// We should probably store all toplevel_decorations in an arraylist or tailqueue to update them later on demand.
-fn newToplevelDecoration(_: *wl.Listener(*wlr.XdgToplevelDecorationV1), xdg_toplevel_decoration: *wlr.XdgToplevelDecorationV1) void {
+fn newToplevelDecoration(listener: *wl.Listener(*wlr.XdgToplevelDecorationV1), xdg_toplevel_decoration: *wlr.XdgToplevelDecorationV1) void {
     log.debug("Signal: wlr_xdg_decoration_manager_new_toplevel_decoration", .{});
-    _ = xdg_toplevel_decoration.setMode(.server_side);
+
+    const self = @fieldParentPtr(Self, "new_toplevel_decoration", listener);
+    const decoration = allocator.create(std.TailQueue(Decoration).Node) catch {
+        xdg_toplevel_decoration.resource.postNoMemory();
+        return;
+    };
+    decoration.data.init(xdg_toplevel_decoration);
+    self.decorations.append(decoration);
 }
