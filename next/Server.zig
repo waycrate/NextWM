@@ -15,6 +15,7 @@ const std = @import("std");
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
+const Config = @import("Config.zig");
 const Control = @import("./global/Control.zig");
 const Cursor = @import("./input/Cursor.zig");
 const DecorationManager = @import("./desktop/DecorationManager.zig");
@@ -36,7 +37,10 @@ wlr_allocator: *wlr.Allocator,
 wlr_scene: *wlr.Scene,
 wlr_compositor: *wlr.Compositor,
 
+wlr_foreign_toplevel_manager: *wlr.ForeignToplevelManagerV1,
+
 control: Control,
+config: Config,
 decoration_manager: DecorationManager,
 input_manager: InputManager,
 
@@ -100,6 +104,9 @@ pub fn init(self: *Self) !void {
     // Create the compositor from the server and renderer.
     self.wlr_compositor = try wlr.Compositor.create(self.wl_server, self.wlr_renderer);
 
+    // Create foreign toplevel manager
+    self.wlr_foreign_toplevel_manager = try wlr.ForeignToplevelManagerV1.create(self.wl_server);
+
     // Creating a scene graph. This handles the servers rendering and damage tracking.
     self.wlr_scene = try wlr.Scene.create();
 
@@ -161,6 +168,7 @@ pub fn init(self: *Self) !void {
     try self.control.init();
     try self.decoration_manager.init();
     try self.input_manager.init();
+    self.config = Config.init();
 
     // Assign the new output callback to said event.
     //
@@ -206,6 +214,8 @@ fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
 
 pub fn deinit(self: *Self) void {
     log.info("Cleaning up server resources", .{});
+    self.config.deinit();
+
     self.sigabrt_cb.remove();
     self.sigint_cb.remove();
     self.sigquit_cb.remove();

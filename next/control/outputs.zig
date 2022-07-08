@@ -9,8 +9,6 @@ const std = @import("std");
 const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
 
-const wlr = @import("wlroots");
-
 const Error = @import("command.zig").Error;
 
 pub fn listOutputs(

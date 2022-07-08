@@ -12,19 +12,24 @@ const wlr = @import("wlroots");
 
 pub const Error = error{
     NoCommand,
+    NotEnoughArguments,
     OutOfMemory,
     TooManyArguments,
     UnknownCommand,
+    UnknownOption,
 };
 
+// zig fmt: off
 const commands = std.ComptimeStringMap(
     fn ([]const [:0]const u8, *?[]const u8) Error!void,
     .{
-        .{ "list-inputs", @import("inputs.zig").listInputs },
+        .{ "list-inputs",  @import("inputs.zig").listInputs   },
         .{ "list-outputs", @import("outputs.zig").listOutputs },
-        .{ "exit", @import("exit.zig").exit },
+        .{ "exit",         @import("exit.zig").exit           },
+        .{ "csd",          @import("csd.zig").csdToggle       },
     },
 );
+// zig fmt: on
 
 pub fn run(
     args: []const [:0]const u8,
@@ -39,8 +44,10 @@ pub fn run(
 pub fn errToMsg(err: Error) [:0]const u8 {
     return switch (err) {
         Error.NoCommand => "No command provided\n",
+        Error.NotEnoughArguments => "Not enough arguments provided\n",
         Error.OutOfMemory => "Out of memory\n",
         Error.TooManyArguments => "Too many arguments\n",
+        Error.UnknownOption => "Unknown option\n",
         Error.UnknownCommand => "Unknown command\n",
     };
 }
