@@ -1,19 +1,18 @@
 PREFIX=/usr
 BINDIR=$(PREFIX)/bin
-
-all: build
+BUILD_FLAGS =
+# ^^^ Possible options:
+# -Drelease-safe
+# -Drelease-fast
+# -Drelease-small
+#
+# Read zig documentation to find out their usecases.
 
 build:
-	zig build -Drelease-safe
-
-fast:
-	zig build -Drelease-fast
-
-small:
-	zig build -Drelease-small
+	zig build $(BUILD_FLAGS)
 
 install:
-	zig build -Drelease-safe --prefix $(PREFIX)
+	zig build $(BUILD_FLAGS) --prefix $(PREFIX)
 
 uninstall:
 	$(RM) $(PREFIX)/bin/next
