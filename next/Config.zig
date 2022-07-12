@@ -19,8 +19,10 @@ csd_titles: std.StringHashMapUnmanaged(void) = .{},
 
 pub fn init() Self {
     log.debug("Initialized compositor config", .{});
-    var self = Self{};
+    var self = .{};
     errdefer self.deinit();
+
+    //TODO: Eventually if we add things that need to be freed, we must create a deinit function.
 
     return self;
 }
@@ -38,14 +40,4 @@ pub fn csdAllowed(self: Self, toplevel: *wlr.XdgToplevel) bool {
         }
     }
     return false;
-}
-
-pub fn deinit(self: *Self) void {
-    log.debug("Destroying server configuration allocations", .{});
-
-    while (self.csd_app_ids.keyIterator().next()) |key| allocator.free(key.*);
-    self.csd_app_ids.deinit(allocator);
-
-    while (self.csd_titles.keyIterator().next()) |key| allocator.free(key.*);
-    self.csd_app_ids.deinit(allocator);
 }

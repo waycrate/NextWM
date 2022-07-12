@@ -214,8 +214,6 @@ fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
 
 pub fn deinit(self: *Self) void {
     log.info("Cleaning up server resources", .{});
-    self.config.deinit();
-
     self.sigabrt_cb.remove();
     self.sigint_cb.remove();
     self.sigquit_cb.remove();
