@@ -11,8 +11,7 @@
 #include <string.h>
 #include <wayland-client.h>
 
-#define VERSION "0.2.0"
-
+#define VERSION "0.1.0"
 #include "next-control-v1.h"
 
 const char usage[] = "Usage: nextctl <command>\n"

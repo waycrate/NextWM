@@ -6,6 +6,8 @@
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const std = @import("std"); // Zig standard library, duh!
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+const allocator = gpa.allocator();
 
 pub fn build(builder: *std.build.Builder) !void {
     const ScanProtocolsStep = @import("deps/zig-wayland/build.zig").ScanProtocolsStep;
@@ -35,18 +37,35 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("next_control_v1", 1);
 
     // Version information.
-    const version = "0.2.0";
+    const version = "0.1.0";
 
     // Create build options.
     const options = builder.addOptions();
     options.addOption([]const u8, "version", version);
 
-    // Sed command to switch out the version string in nextctl.h file.
-    const sed_version_command = std.fmt.comptimePrint("sed -i 's/^#define VERSION.*/#define VERSION \"{s}\"/' nextctl/nextctl.h", .{version});
-    _ = try builder.exec(&[_][]const u8{ "sh", "-c", sed_version_command });
+    // This block keeps the zig compositor version and the nextctl.h file version in sync.
+    {
+        // Get the current version in the header for the search and replace.
+        const current_version = try builder.exec(&[_][]const u8{ "sh", "-c", "grep 'define VERSION' nextctl/nextctl.h" });
+        // Create the new version string.
+        const new_version_string = std.fmt.comptimePrint("#define VERSION \"{s}\"\n", .{version});
 
-    // Building nextctl.
-    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "make clean nextctl -C ./nextctl" });
+        // Get the file contents into a buffer.
+        const file = try std.fs.cwd().openFile("nextctl/nextctl.h", .{ .read = true });
+        const file_size = (try file.stat()).size;
+        const file_buffer = try file.readToEndAlloc(allocator, file_size);
+        defer allocator.free(file_buffer);
+
+        // Replace old string with new one.
+        const replaced_str = try std.mem.replaceOwned(u8, allocator, file_buffer, current_version, new_version_string);
+        defer allocator.free(replaced_str);
+
+        // Write our changes to the header file.
+        try std.fs.cwd().writeFile("nextctl/nextctl.h", replaced_str);
+
+        // Building nextctl.
+        _ = try builder.exec(&[_][]const u8{ "sh", "-c", "make clean nextctl -C ./nextctl" });
+    }
 
     // Creating the executable.
     const exe = builder.addExecutable("next", "next/next.zig");
