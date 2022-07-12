@@ -11,7 +11,7 @@ const std = @import("std");
 const allocator = @import("utils/allocator.zig").allocator;
 const log = std.log.scoped(.Config);
 
-const wlr = @import("wlroots");
+const Window = @import("./desktop/Window.zig");
 
 /// Titles and app-id's of toplevels that should render client side decorations.
 csd_app_ids: std.StringHashMapUnmanaged(void) = .{},
@@ -27,17 +27,13 @@ pub fn init() Self {
     return self;
 }
 
-pub fn csdAllowed(self: Self, toplevel: *wlr.XdgToplevel) bool {
-    if (toplevel.app_id) |app_id| {
-        if (self.csd_app_ids.contains(std.mem.span(app_id))) {
-            return true;
-        }
+pub fn csdAllowed(self: Self, window: *Window) bool {
+    if (self.csd_app_ids.contains(std.mem.span(window.getAppId()))) {
+        return true;
     }
 
-    if (toplevel.title) |title| {
-        if (self.csd_titles.contains(std.mem.span(title))) {
-            return true;
-        }
+    if (self.csd_titles.contains(std.mem.span(window.getTitle()))) {
+        return true;
     }
     return false;
 }

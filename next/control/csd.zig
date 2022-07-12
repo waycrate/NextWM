@@ -13,8 +13,6 @@ const std = @import("std");
 const Error = @import("command.zig").Error;
 const Window = @import("../desktop/Window.zig");
 
-const wlr = @import("wlroots");
-
 const FilterKind = enum {
     @"app-id",
     title,
@@ -54,10 +52,11 @@ pub fn csdToggle(
     var decoration_it = server.decoration_manager.decorations.first;
     while (decoration_it) |decoration_node| : (decoration_it = decoration_node.next) {
         const xdg_toplevel_decoration = decoration_node.data.xdg_toplevel_decoration;
+        const window = @intToPtr(*Window, xdg_toplevel_decoration.surface.data);
 
         const window_data: []const u8 = switch (kind) {
-            .@"app-id" => std.mem.span(getAppId(xdg_toplevel_decoration)),
-            .title => std.mem.span(getTitle(xdg_toplevel_decoration)),
+            .@"app-id" => std.mem.span(window.getAppId()),
+            .title => std.mem.span(window.getTitle()),
         };
 
         if (std.mem.eql(u8, key, window_data)) {
@@ -70,21 +69,5 @@ pub fn csdToggle(
                 },
             }
         }
-    }
-}
-
-pub fn getTitle(decoration: *wlr.XdgToplevelDecorationV1) [*:0]const u8 {
-    if (decoration.surface.role_data.toplevel.title) |title| {
-        return title;
-    } else {
-        return "<No Title>";
-    }
-}
-
-pub fn getAppId(decoration: *wlr.XdgToplevelDecorationV1) [*:0]const u8 {
-    if (decoration.surface.role_data.toplevel.app_id) |app_id| {
-        return app_id;
-    } else {
-        return "<No AppId>";
     }
 }

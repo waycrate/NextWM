@@ -15,7 +15,6 @@ const std = @import("std");
 
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
-const zwlr = @import("wayland").server.zwlr;
 
 const Server = @import("../Server.zig");
 const XdgToplevel = @import("XdgToplevel.zig");
@@ -39,10 +38,15 @@ pub fn init(self: *Self, backend: Backend) !void {
         .backend = backend,
         .wlr_foreign_toplevel_handle = try wlr.ForeignToplevelHandleV1.create(server.wlr_foreign_toplevel_manager),
     };
+
     server.pending_windows.append(allocator, self) catch {
         log.err("Failed to allocate memory", .{});
         return;
     };
+
+    switch (backend) {
+        .xdg_toplevel => |xdg_toplevel| xdg_toplevel.xdg_surface.data = @ptrToInt(self),
+    }
 }
 
 pub fn map(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {

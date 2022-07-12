@@ -45,11 +45,13 @@ fn handleDestroy(listener: *wl.Listener(*wlr.XdgToplevelDecorationV1), _: *wlr.X
     allocator.destroy(node);
 }
 
-fn requestMode(listener: *wl.Listener(*wlr.XdgToplevelDecorationV1), xdg_toplevel_decoration: *wlr.XdgToplevelDecorationV1) void {
+fn requestMode(listener: *wl.Listener(*wlr.XdgToplevelDecorationV1), _: *wlr.XdgToplevelDecorationV1) void {
     const self = @fieldParentPtr(Self, "request_mode", listener);
     log.debug("Signal: wlr_xdg_toplevel_decoration_request_mode", .{});
 
-    if (server.config.csdAllowed(xdg_toplevel_decoration.surface.role_data.toplevel)) {
+    const window = @intToPtr(*Window, self.xdg_toplevel_decoration.surface.data);
+
+    if (server.config.csdAllowed(window)) {
         _ = self.xdg_toplevel_decoration.setMode(.client_side);
     } else {
         _ = self.xdg_toplevel_decoration.setMode(.server_side);
