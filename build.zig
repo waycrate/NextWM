@@ -45,10 +45,8 @@ pub fn build(builder: *std.build.Builder) !void {
 
     // This block keeps the zig compositor version and the nextctl.h file version in sync.
     {
-        // Get the current version in the header for the search and replace.
-        const current_version = try builder.exec(&[_][]const u8{ "sh", "-c", "grep 'define VERSION' nextctl/nextctl.h" });
-        // Create the new version string.
-        const new_version_string = std.fmt.comptimePrint("#define VERSION \"{s}\"\n", .{version});
+        // The needle to search with.
+        const needle = "#define VERSION ";
 
         // Get the file contents into a buffer.
         const file = try std.fs.cwd().openFile("nextctl/nextctl.h", .{ .read = true });
@@ -56,8 +54,20 @@ pub fn build(builder: *std.build.Builder) !void {
         const file_buffer = try file.readToEndAlloc(allocator, file_size);
         defer allocator.free(file_buffer);
 
+        // Find the starting index of the needle, calculate the index of the ending " from that and then
+        // take a slice of the version string out.
+        const start_index = std.mem.indexOfPos(u8, file_buffer, 0, needle).? + needle.len;
+        const end_index = std.mem.indexOfPos(u8, file_buffer, start_index + 1, "\"").? + 1;
+        const old_version = file_buffer[start_index..end_index];
+
+        // This cannot be evaluated at comptime :(
+        const old_version_str = try std.fmt.allocPrint(allocator, "{s}{s}\n", .{ needle, old_version });
+        defer allocator.free(old_version_str);
+
+        const new_version_str = std.fmt.comptimePrint("{s}\"{s}\"\n", .{ needle, version });
+
         // Replace old string with new one.
-        const replaced_str = try std.mem.replaceOwned(u8, allocator, file_buffer, current_version, new_version_string);
+        const replaced_str = try std.mem.replaceOwned(u8, allocator, file_buffer, old_version_str, new_version_str);
         defer allocator.free(replaced_str);
 
         // Write our changes to the header file.
