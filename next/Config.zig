@@ -21,10 +21,9 @@ border_width: u8 = 0,
 
 pub fn init() Self {
     log.debug("Initialized compositor config", .{});
-    var self = .{};
+    const self = .{};
     errdefer self.deinit();
 
-    //TODO: Eventually if we add things that need to be freed, we must create a deinit function.
     return self;
 }
 
@@ -37,4 +36,14 @@ pub fn csdAllowed(self: Self, window: *Window) bool {
         return true;
     }
     return false;
+}
+
+pub fn deinit(self: *Self) void {
+    log.debug("Destroying server configuration allocations", .{});
+
+    while (self.csd_app_ids.keyIterator().next()) |key| allocator.free(key.*);
+    while (self.csd_titles.keyIterator().next()) |key| allocator.free(key.*);
+
+    self.csd_app_ids.deinit(allocator);
+    self.csd_titles.deinit(allocator);
 }

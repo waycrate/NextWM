@@ -243,6 +243,7 @@ pub fn deinit(self: *Self) void {
 
     // Destroy the server.
     self.wl_server.destroy();
+    self.config.deinit();
     log.info("Exiting NextWM...", .{});
 }
 
