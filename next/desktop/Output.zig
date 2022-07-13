@@ -34,10 +34,19 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
     if (!wlr_output.initRender(server.wlr_allocator, server.wlr_renderer)) return;
 
     // Some backends don't have modes. DRM+KMS does, and we need to set a mode before using the target.
-    if (wlr_output.preferredMode()) |mode| {
-        wlr_output.setMode(mode);
+    if (wlr_output.preferredMode()) |preferred_mode| {
+        wlr_output.setMode(preferred_mode);
         wlr_output.enable(true);
-        wlr_output.commit() catch return;
+        // If preferred_mode setting failed then we iterate over all possible modes and attempt to set one.
+        // If we set one succesfully then we break the loop!
+        wlr_output.commit() catch {
+            while (wlr_output.modes.iterator(.forward).next()) |mode| {
+                if (mode == preferred_mode) continue;
+                wlr_output.setMode(mode);
+                wlr_output.commit() catch continue;
+                break;
+            }
+        };
     }
 
     self.* = .{
