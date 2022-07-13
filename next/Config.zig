@@ -17,13 +17,14 @@ const Window = @import("./desktop/Window.zig");
 csd_app_ids: std.StringHashMapUnmanaged(void) = .{},
 csd_titles: std.StringHashMapUnmanaged(void) = .{},
 
+border_width: u8 = 0,
+
 pub fn init() Self {
     log.debug("Initialized compositor config", .{});
     var self = .{};
     errdefer self.deinit();
 
     //TODO: Eventually if we add things that need to be freed, we must create a deinit function.
-
     return self;
 }
 

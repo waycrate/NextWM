@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD 2-Clause "Simplified" License
 //
-// next/global/command.zig
+// next/control/command.zig
 //
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
@@ -23,10 +23,11 @@ pub const Error = error{
 const commands = std.ComptimeStringMap(
     fn ([]const [:0]const u8, *?[]const u8) Error!void,
     .{
-        .{ "list-inputs",  @import("inputs.zig").listInputs   },
-        .{ "list-outputs", @import("outputs.zig").listOutputs },
-        .{ "exit",         @import("exit.zig").exit           },
-        .{ "csd",          @import("csd.zig").csdToggle       },
+        .{ "border-width",          @import("border.zig").setWidth     },
+        .{ "csd",                   @import("csd.zig").csdToggle       },
+        .{ "exit",                  @import("exit.zig").exit           },
+        .{ "list-inputs",           @import("inputs.zig").listInputs   },
+        .{ "list-outputs",          @import("outputs.zig").listOutputs },
     },
 );
 // zig fmt: on
