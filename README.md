@@ -17,6 +17,7 @@ The wlroots ecosystem is hard to initially get into as per my experience and I w
 
 ### Depedencies
 
+1. C compiler.
 1. `libinput`
 1. `make`
 1. `pixman`
