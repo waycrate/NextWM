@@ -69,6 +69,9 @@ wlr_power_manager: *wlr.OutputPowerManagerV1,
 set_mode: wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode),
 
 wlr_seat: *wlr.Seat,
+request_set_selection: wl.Listener(*wlr.Seat.event.RequestSetSelection),
+request_set_primary_selection: wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection),
+
 wlr_cursor: *wlr.Cursor,
 wlr_xcursor_manager: *wlr.XcursorManager,
 wlr_xwayland: *wlr.Xwayland,
@@ -188,6 +191,14 @@ pub fn init(self: *Self) !void {
     // Add a callback for when a new layer surface is created.
     self.new_layer_surface.setNotify(newLayerSurface);
     self.wlr_layer_shell.events.new_surface.add(&self.new_layer_surface);
+
+    // Add a callback when the seat wants to set a selection.
+    self.request_set_selection.setNotify(requestSetSelection);
+    self.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
+
+    // Add a callback when the seat wants to set the primary selection.
+    self.request_set_primary_selection.setNotify(requestSetPrimarySelection);
+    self.wlr_seat.events.request_set_primary_selection.add(&self.request_set_primary_selection);
 }
 
 // Create the socket, start the backend, and setup the environment
@@ -203,13 +214,6 @@ pub fn start(self: *Self) !void {
     try self.wlr_backend.start();
     log.info("Starting NextWM on {s}", .{socket});
     log.info("Xwayland initialized at {s}", .{self.wlr_xwayland.display_name});
-}
-
-// This is called to gracefully handle signals.
-fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
-    log.info("Termination event loop.", .{});
-    wl_server.terminate();
-    return 0;
 }
 
 pub fn deinit(self: *Self) void {
@@ -240,6 +244,29 @@ pub fn deinit(self: *Self) void {
     // Destroy the server.
     self.wl_server.destroy();
     log.info("Exiting NextWM...", .{});
+}
+
+// This is called to gracefully handle signals.
+fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
+    log.info("Termination event loop.", .{});
+    wl_server.terminate();
+    return 0;
+}
+
+// Callback that gets triggered when the server seat wants to set a selection.
+pub fn requestSetSelection(listener: *wl.Listener(*wlr.Seat.event.RequestSetSelection), event: *wlr.Seat.event.RequestSetSelection) void {
+    const self = @fieldParentPtr(Self, "request_set_selection", listener);
+    log.debug("Signal: wlr_seat_request_set_selection", .{});
+
+    self.wlr_seat.setSelection(event.source, event.serial);
+}
+
+// Callback that gets triggered when the server seat wants to set the primary selection.
+pub fn requestSetPrimarySelection(listener: *wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection), event: *wlr.Seat.event.RequestSetPrimarySelection) void {
+    const self = @fieldParentPtr(Self, "request_set_primary_selection", listener);
+    log.debug("Signal: wlr_seat_request_set_primary_selection", .{});
+
+    self.wlr_seat.setPrimarySelection(event.source, event.serial);
 }
 
 // Callback that gets triggered on existence of a new output.
