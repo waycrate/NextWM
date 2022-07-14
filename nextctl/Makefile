@@ -1,4 +1,4 @@
-SCANNER := wayland-scanner
+WAYLAND_SCANNER = $(shell pkg-config --variable=wayland_scanner wayland-scanner)
 
 CFLAGS += -Wall -Werror -Wextra -Wpedantic -Wno-unused-parameter -Wconversion -Wformat-security -Wformat -Wsign-conversion -Wfloat-conversion
 CFLAGS += -Wunused-result -fsanitize=leak -std=c18
@@ -17,10 +17,10 @@ nextctl: $(OBJ)
 $(OBJ): $(GEN)
 
 %.c: %.xml
-	$(SCANNER) private-code < $< > $@
+	$(WAYLAND_SCANNER) private-code < $< > $@
 
 %.h: %.xml
-	$(SCANNER) client-header < $< > $@
+	$(WAYLAND_SCANNER) client-header < $< > $@
 
 clean:
 	$(RM) nextctl $(GEN) $(OBJ)
