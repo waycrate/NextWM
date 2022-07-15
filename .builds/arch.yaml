@@ -1,4 +1,4 @@
-image: arch
+image: archlinux
 packages:
     - git
     - make
