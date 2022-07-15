@@ -71,6 +71,7 @@ set_mode: wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode),
 wlr_seat: *wlr.Seat,
 request_set_selection: wl.Listener(*wlr.Seat.event.RequestSetSelection),
 request_set_primary_selection: wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection),
+request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor),
 
 wlr_cursor: *wlr.Cursor,
 wlr_xcursor_manager: *wlr.XcursorManager,
@@ -199,6 +200,10 @@ pub fn init(self: *Self) !void {
     // Add a callback when the seat wants to set the primary selection.
     self.request_set_primary_selection.setNotify(requestSetPrimarySelection);
     self.wlr_seat.events.request_set_primary_selection.add(&self.request_set_primary_selection);
+
+    // Add a callback when a client wants to set the cursor image.
+    self.request_set_cursor.setNotify(requestSetCursor);
+    self.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
 }
 
 // Create the socket, start the backend, and setup the environment
@@ -268,6 +273,21 @@ pub fn requestSetPrimarySelection(listener: *wl.Listener(*wlr.Seat.event.Request
     log.debug("Signal: wlr_seat_request_set_primary_selection", .{});
 
     self.wlr_seat.setPrimarySelection(event.source, event.serial);
+}
+
+// Callback that gets triggered when a client wants to set the cursor image.
+pub fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
+    const self = @fieldParentPtr(Self, "request_set_cursor", listener);
+    log.debug("Signal: wlr_seat_request_set_cursor", .{});
+
+    // Check if the client request to set the cursor is the currently focused surface.
+    const focused_client = self.wlr_seat.pointer_state.focused_client;
+    if (focused_client == event.seat_client) {
+        log.debug("Focused toplevel set the cursor surface", .{});
+        self.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
+    } else {
+        log.debug("Non-focused toplevel attempted to set the cursor surface. Request denied", .{});
+    }
 }
 
 // Callback that gets triggered on existence of a new output.
