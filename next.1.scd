@@ -1,4 +1,4 @@
-next(1) "github.com/waycrate/nextwm" "General Commands Manual"
+next(1) "git.sr.ht/~shinyzenith/NextWM" "General Commands Manual"
 
 # NAME
 
@@ -19,4 +19,4 @@ TODO
 # AUTHORS
 
 Maintained by Shinyzenith <aakashsensharma@gmail.com>.
-For more information about development, see <https://github.com/waycrate/nextwmm>.
+For more information about development, see <https://git.sr.ht/~shinyzenith/NextWM>.

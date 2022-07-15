@@ -32,13 +32,18 @@ The wlroots ecosystem is hard to initially get into as per my experience and I w
 ## Steps
 
 ```bash
-git clone --recursive https://github.com/waycrate/NextWM;cd NextWM
+git clone --recursive https://git.sr.ht/~shinyzenith/NextWM
 sudo make install
 ```
 
 ## Keybind handling
 
 Consider using the compositors in-built key mapper or [swhkd](https://github.com/shinyzenith/swhkd) if you're looking for a sxhkd like experience.
+
+## Contributing:
+
+Send patches to:
+[~shinyzenith/NextWM@lists.sr.ht](https://lists.sr.ht/~shinyzenith/NextWM)
 
 ## Support
 

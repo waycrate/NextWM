@@ -1,0 +1,20 @@
+image: arch
+packages:
+    - git
+    - make
+    - pkgconf
+    - scdoc
+    - wayland
+    - wayland-protocols
+    - wlroots
+    - xorg-xwayland
+    - zig
+sources:
+    - https://git.sr.ht/~shinyzenith/NextWM
+tasks:
+    - build: |
+          cd NextWM
+          make
+    - fmt: |
+          cd NextWM
+          make check
