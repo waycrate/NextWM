@@ -45,6 +45,10 @@ Consider using the compositors in-built key mapper or [swhkd](https://github.com
 Send patches to:
 [~shinyzenith/NextWM@lists.sr.ht](https://lists.sr.ht/~shinyzenith/NextWM)
 
+## Bug tracker:
+
+https://todo.sr.ht/~shinyzenith/NextWM
+
 ## Support
 
 -   https://matrix.to/#/#waycrate-tools:matrix.org
