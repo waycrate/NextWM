@@ -17,8 +17,12 @@ jobs:
             - name: Checkout NextWM
               uses: actions/checkout@v2
 
-            - name: Build NextWM
+            - name: Formatting Check
               run: |
                   git config --global --add safe.directory /__w/NextWM/NextWM
                   git submodule sync --recursive && git submodule update --init --force --recursive
-                  zig build
+                  make check
+
+            - name: Build NextWM
+              run: |
+                  make

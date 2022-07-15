@@ -14,6 +14,10 @@ build:
 install:
 	zig build $(BUILD_FLAGS) --prefix $(PREFIX)
 
+check:
+	zig fmt --check next/
+	zig fmt --check build.zig
+
 uninstall:
 	$(RM) $(PREFIX)/bin/next
 	$(RM) $(PREFIX)/bin/nextctl
