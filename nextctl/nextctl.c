@@ -30,19 +30,21 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  for(int i =1; i< argc; i++){
-      if (strcmp("-h", argv[i]) == 0 || strcmp("--help", argv[i]) == 0) {
-          fputs(usage, stderr);
-          return EXIT_SUCCESS;
-      } else if (strcmp("-v", argv[i]) == 0 || strcmp("--version", argv[i]) == 0){
-          printf("Nextctl version: %s\n", VERSION);
-          return EXIT_SUCCESS;
-      }
-      next_control_v1_add_argument(state.next_control, argv[i]);
+  for (int i = 1; i < argc; i++) {
+    if (strcmp("-h", argv[i]) == 0 || strcmp("--help", argv[i]) == 0) {
+      fputs(usage, stderr);
+      return EXIT_SUCCESS;
+    } else if (strcmp("-v", argv[i]) == 0 ||
+               strcmp("--version", argv[i]) == 0) {
+      printf("Nextctl version: %s\n", VERSION);
+      return EXIT_SUCCESS;
+    }
+    next_control_v1_add_argument(state.next_control, argv[i]);
   }
 
   state.next_command_callback = next_control_v1_run_command(state.next_control);
-  next_command_callback_v1_add_listener(state.next_command_callback, &callback_listener,NULL);
+  next_command_callback_v1_add_listener(state.next_command_callback,
+                                        &callback_listener, NULL);
 
   if (wl_display_dispatch(state.wl_display) < 0) {
     fputs("ERROR: wayland dispatch failed.\n", stderr);
@@ -63,13 +65,18 @@ static void registry_handle_global(void *data, struct wl_registry *registry,
   }
 }
 
-static void next_handle_success(void *data, struct next_command_callback_v1 *callback, const char *output) {
-    fputs(output, stdout);
+static void next_handle_success(void *data,
+                                struct next_command_callback_v1 *callback,
+                                const char *output) {
+  fputs(output, stdout);
 }
 
-static void next_handle_failure(void *data, struct next_command_callback_v1 *callback, const char *failure_message) {
-    fprintf(stderr, "Error: %s", failure_message);
-    if(strcmp("Unknown command\n\0", failure_message) == 0 || strcmp("No command provided\n\0", failure_message) == 0) {
-        fputs(usage, stderr);
-    }
+static void next_handle_failure(void *data,
+                                struct next_command_callback_v1 *callback,
+                                const char *failure_message) {
+  fprintf(stderr, "Error: %s", failure_message);
+  if (strcmp("Unknown command\n\0", failure_message) == 0 ||
+      strcmp("No command provided\n\0", failure_message) == 0) {
+    fputs(usage, stderr);
+  }
 }
