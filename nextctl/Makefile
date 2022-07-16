@@ -12,6 +12,8 @@ CFLAGS += $(foreach p,$(PKGS),$(shell pkg-config --cflags $(p)))
 LDLIBS += $(foreach p,$(PKGS),$(shell pkg-config --libs $(p)))
 
 nextctl: $(OBJ)
+	clang-format -i nextctl.c
+	clang-format -i nextctl.h
 	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(CFLAGS) $(LDLIBS)
 
 $(OBJ): $(GEN)
@@ -25,4 +27,8 @@ $(OBJ): $(GEN)
 clean:
 	$(RM) nextctl $(GEN) $(OBJ)
 
-.PHONY: clean install
+check:
+	clang-format -style=file --dry-run --Werror nextctl.c
+	clang-format -style=file --dry-run --Werror nextctl.h
+
+.PHONY: clean install check

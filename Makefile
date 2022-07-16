@@ -17,6 +17,7 @@ install:
 check:
 	zig fmt --check next/
 	zig fmt --check build.zig
+	$(MAKE) -C ./nextctl -s $@
 
 uninstall:
 	$(RM) $(PREFIX)/bin/next
