@@ -31,4 +31,4 @@ clean:
 	$(MAKE) -C ./nextctl -s $@
 	$(RM) ./doc/*.1
 
-.PHONY: build fast clean install
+.PHONY: build clean install uninstall check
