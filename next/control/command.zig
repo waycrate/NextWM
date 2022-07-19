@@ -23,11 +23,12 @@ pub const Error = error{
 const commands = std.ComptimeStringMap(
     fn ([]const [:0]const u8, *?[]const u8) Error!void,
     .{
-        .{ "border-width",          @import("border.zig").setWidth     },
-        .{ "csd",                   @import("csd.zig").csdToggle       },
-        .{ "exit",                  @import("exit.zig").exit           },
-        .{ "list-inputs",           @import("inputs.zig").listInputs   },
-        .{ "list-outputs",          @import("outputs.zig").listOutputs },
+        .{ "border-width",          @import("border.zig").setWidth      },
+        .{ "csd",                   @import("csd.zig").csdToggle        },
+        .{ "exit",                  @import("exit.zig").exit            },
+        .{ "list-inputs",           @import("inputs.zig").listInputs    },
+        .{ "list-outputs",          @import("outputs.zig").listOutputs  },
+        .{ "set-repeat-rate",       @import("set_repeat.zig").setRepeat },
     },
 );
 // zig fmt: on

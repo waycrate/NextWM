@@ -24,4 +24,4 @@ pub fn setWidth(
     };
 }
 
-//TODO: Write a function to iterate over all views and change their border with.
+//TODO: Write a function to iterate over all views and change their border width.

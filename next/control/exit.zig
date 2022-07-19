@@ -5,7 +5,6 @@
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
-const std = @import("std");
 const server = &@import("../next.zig").server;
 
 const Error = @import("command.zig").Error;

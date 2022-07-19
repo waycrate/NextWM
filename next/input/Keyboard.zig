@@ -39,8 +39,7 @@ pub fn init(self: *Self, device: *wlr.InputDevice) void {
         return;
     };
 
-    //TODO: This should be configurable.
-    self.wlr_keyboard.setRepeatInfo(100, 300);
+    self.wlr_keyboard.setRepeatInfo(self.server.config.repeat_rate, self.server.config.repeat_delay);
 
     self.wlr_keyboard.events.key.add(&self.keyboard_key);
     self.wlr_input_device.events.destroy.add(&self.keyboard_destroy);
