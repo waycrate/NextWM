@@ -65,6 +65,9 @@ pending_windows: std.ArrayListUnmanaged(*Window),
 wlr_layer_shell: *wlr.LayerShellV1,
 new_layer_surface: wl.Listener(*wlr.LayerSurfaceV1),
 
+wlr_xwayland: *wlr.Xwayland,
+new_xwayland_surface: wl.Listener(*wlr.XwaylandSurface),
+
 wlr_power_manager: *wlr.OutputPowerManagerV1,
 set_mode: wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode),
 
@@ -75,7 +78,6 @@ request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor),
 
 wlr_cursor: *wlr.Cursor,
 wlr_xcursor_manager: *wlr.XcursorManager,
-wlr_xwayland: *wlr.Xwayland,
 
 pub fn init(self: *Self) !void {
     // Creating the server itself.
@@ -204,6 +206,10 @@ pub fn init(self: *Self) !void {
     // Add a callback when a client wants to set the cursor image.
     self.request_set_cursor.setNotify(requestSetCursor);
     self.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
+
+    // Add a callback when a xwayland surface is created.
+    self.new_xwayland_surface.setNotify(newXwaylandSurface);
+    self.wlr_xwayland.events.new_surface.add(&self.new_xwayland_surface);
 }
 
 // Create the socket, start the backend, and setup the environment
@@ -329,6 +335,18 @@ fn newXdgSurface(_: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface)
 pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), _: *wlr.LayerSurfaceV1) void {
     log.debug("Signal: wlr_layer_shell_new_surface", .{});
     //TODO: Populate this
+}
+
+// This callback is called when a new xwayland surface is created.
+pub fn newXwaylandSurface(listener: *wl.Listener(*wlr.XwaylandSurface), xwayland_surface: *wlr.XwaylandSurface) void {
+    _ = @fieldParentPtr(Self, "new_xwayland_surface", listener);
+    log.debug("Signal: wlr_xwayland_new_surface", .{});
+
+    if (xwayland_surface.override_redirect) {
+        // TODO: Create override_redirect surface.
+    } else {
+        //TODO: Create Xwayland window.
+    }
 }
 
 // Callback that gets triggered on existence of a new output.

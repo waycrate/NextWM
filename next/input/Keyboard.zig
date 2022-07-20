@@ -79,8 +79,7 @@ fn handleCompositorBindings(keysym: xkb.Keysym) bool {
             if (server.wlr_backend.isMulti()) {
                 if (server.wlr_backend.getSession()) |session| {
                     session.changeVt(@enumToInt(keysym) - xkb.Keysym.XF86Switch_VT_1 + 1) catch {
-                        //TODO: Stop printing, start logging.
-                        std.debug.print("Failed to switch VT.", .{});
+                        log.err("Failed to switch VT.", .{});
                     };
                 }
             }
