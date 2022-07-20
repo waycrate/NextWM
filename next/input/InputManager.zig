@@ -103,3 +103,12 @@ pub fn setSeatCapabilities(self: *Self) void {
         });
     }
 }
+
+pub fn hideCursor(self: *Self) void {
+    //TODO: Check if any buttons are currently pressed then don't hide the cursor.
+    // if (self.pressed_count > 0) return;
+    // self.hidden = true;
+    //TODO: Check rivers implementation.
+    self.server.wlr_cursor.setImage(null, 0, 0, 0, 0, 0, 0);
+    self.server.wlr_seat.pointerNotifyClearFocus();
+}

@@ -17,6 +17,8 @@ const Window = @import("./desktop/Window.zig");
 csd_app_ids: std.StringHashMapUnmanaged(void) = .{},
 csd_titles: std.StringHashMapUnmanaged(void) = .{},
 
+cursor_hide_when_typing: bool = false,
+
 repeat_rate: i32 = 100,
 repeat_delay: i32 = 300,
 
