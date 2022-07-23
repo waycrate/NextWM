@@ -17,6 +17,7 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Server = @import("../Server.zig");
+const Output = @import("Output.zig");
 const XdgToplevel = @import("XdgToplevel.zig");
 
 const Backend = union(enum) {
@@ -24,6 +25,7 @@ const Backend = union(enum) {
 };
 
 server: *Server = server,
+output: *Output,
 
 wlr_foreign_toplevel_handle: *wlr.ForeignToplevelHandleV1 = null,
 
@@ -32,9 +34,10 @@ wlr_surface: ?*wlr.Surface = null,
 
 map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(map),
 
-pub fn init(self: *Self, backend: Backend) !void {
+pub fn init(self: *Self, output: *Output, backend: Backend) !void {
     // TODO: Set toplevel tags here.
     self.* = .{
+        .output = output,
         .backend = backend,
         .wlr_foreign_toplevel_handle = try wlr.ForeignToplevelHandleV1.create(server.wlr_foreign_toplevel_manager),
     };

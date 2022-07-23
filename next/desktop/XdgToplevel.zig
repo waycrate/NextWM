@@ -17,6 +17,7 @@ const wlr = @import("wlroots");
 
 const Server = @import("../Server.zig");
 const Window = @import("Window.zig");
+const Output = @import("Output.zig");
 
 window: *Window,
 
@@ -27,7 +28,7 @@ scene_node: *wlr.SceneNode,
 set_app_id: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(setAppId),
 set_title: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(setTitle),
 
-pub fn init(xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
+pub fn init(output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
     log.debug("New xdg_shell toplevel received: title={s} app_id={s}", .{
         xdg_surface.role_data.toplevel.title,
         xdg_surface.role_data.toplevel.app_id,
@@ -39,7 +40,7 @@ pub fn init(xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
     };
     errdefer allocator.free(window);
 
-    window.init(.{
+    window.init(output, .{
         .xdg_toplevel = .{
             .window = window,
             .xdg_surface = xdg_surface,

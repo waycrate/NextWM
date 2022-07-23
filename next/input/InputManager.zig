@@ -45,8 +45,8 @@ pub fn init(self: *Self) !void {
     };
 
     server.wlr_backend.events.new_input.add(&self.new_input);
-    server.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
-    server.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
+    server.seat.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
+    server.seat.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
 }
 
 fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
@@ -84,7 +84,7 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
 fn requestSetSelection(listener: *wl.Listener(*wlr.Seat.event.RequestSetSelection), event: *wlr.Seat.event.RequestSetSelection) void {
     const self = @fieldParentPtr(Self, "request_set_selection", listener);
     log.debug("Signal: wlr_seat_request_set_selection", .{});
-    self.server.wlr_seat.setSelection(event.source, event.serial);
+    self.server.seat.wlr_seat.setSelection(event.source, event.serial);
 }
 
 fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
@@ -96,7 +96,7 @@ fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), ev
 pub fn setSeatCapabilities(self: *Self) void {
     log.debug("Setting seat capabilities", .{});
     if (self.server.keyboards.items.len > 0) {
-        self.server.wlr_seat.setCapabilities(.{
+        self.server.seat.wlr_seat.setCapabilities(.{
             //TODO: Don't always assume we have a pointer, check this.
             .pointer = true,
             .keyboard = true,
@@ -110,5 +110,5 @@ pub fn hideCursor(self: *Self) void {
     // self.hidden = true;
     //TODO: Check rivers implementation.
     self.server.wlr_cursor.setImage(null, 0, 0, 0, 0, 0, 0);
-    self.server.wlr_seat.pointerNotifyClearFocus();
+    self.server.seat.wlr_seat.pointerNotifyClearFocus();
 }

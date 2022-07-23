@@ -22,11 +22,11 @@ const DecorationManager = @import("./desktop/DecorationManager.zig");
 const InputManager = @import("./input/InputManager.zig");
 const Keyboard = @import("./input/Keyboard.zig");
 const Output = @import("./desktop/Output.zig");
+const Seat = @import("./input/Seat.zig");
 const Window = @import("./desktop/Window.zig");
 const XdgToplevel = @import("./desktop/XdgToplevel.zig");
 
 const default_cursor_size = 24;
-const default_seat_name = "next-seat0";
 
 wl_server: *wl.Server,
 wl_event_loop: *wl.EventLoop,
@@ -39,10 +39,11 @@ wlr_compositor: *wlr.Compositor,
 
 wlr_foreign_toplevel_manager: *wlr.ForeignToplevelManagerV1,
 
-control: Control,
 config: Config,
+control: Control,
 decoration_manager: DecorationManager,
 input_manager: InputManager,
+seat: *Seat,
 
 sigint_cb: *wl.EventSource,
 sigterm_cb: *wl.EventSource,
@@ -70,11 +71,6 @@ new_xwayland_surface: wl.Listener(*wlr.XwaylandSurface),
 
 wlr_power_manager: *wlr.OutputPowerManagerV1,
 set_mode: wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode),
-
-wlr_seat: *wlr.Seat,
-request_set_selection: wl.Listener(*wlr.Seat.event.RequestSetSelection),
-request_set_primary_selection: wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection),
-request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor),
 
 wlr_cursor: *wlr.Cursor,
 wlr_xcursor_manager: *wlr.XcursorManager,
@@ -120,13 +116,6 @@ pub fn init(self: *Self) !void {
     self.wlr_output_layout = try wlr.OutputLayout.create();
     errdefer self.wlr_output_layout.destroy();
 
-    //Configures a seat, which is a single "seat" at which a user sits and
-    //operates the computer. This conceptually includes up to one keyboard,
-    //pointer, touch, and drawing tablet device. We also rig up a listener to
-    //let us know when new input devices are available on the backend.
-    self.wlr_seat = try wlr.Seat.create(self.wl_server, default_seat_name);
-    errdefer self.wlr_seat.destroy();
-
     // Create a wlr cursor object which is a wlroots utility to track the cursor on the screen.
     self.wlr_cursor = try wlr.Cursor.create();
     errdefer self.wlr_cursor.destroy();
@@ -147,10 +136,14 @@ pub fn init(self: *Self) !void {
     // (on / off).
     self.wlr_power_manager = try wlr.OutputPowerManagerV1.create(self.wl_server);
 
+    // Creating the seat.
+    self.seat = try allocator.create(Seat);
+    try self.seat.init();
+
     // Initializing Xwayland.
     // True here indicates that Xwayland will be launched on demand.
     self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, true);
-    self.wlr_xwayland.setSeat(self.wlr_seat);
+    self.wlr_xwayland.setSeat(self.seat.wlr_seat);
 
     // Initialize wl_shm, linux-dmabuf and other buffer factory protocols.
     try self.wlr_renderer.initServer(self.wl_server);
@@ -195,18 +188,6 @@ pub fn init(self: *Self) !void {
     self.new_layer_surface.setNotify(newLayerSurface);
     self.wlr_layer_shell.events.new_surface.add(&self.new_layer_surface);
 
-    // Add a callback when the seat wants to set a selection.
-    self.request_set_selection.setNotify(requestSetSelection);
-    self.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
-
-    // Add a callback when the seat wants to set the primary selection.
-    self.request_set_primary_selection.setNotify(requestSetPrimarySelection);
-    self.wlr_seat.events.request_set_primary_selection.add(&self.request_set_primary_selection);
-
-    // Add a callback when a client wants to set the cursor image.
-    self.request_set_cursor.setNotify(requestSetCursor);
-    self.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
-
     // Add a callback when a xwayland surface is created.
     self.new_xwayland_surface.setNotify(newXwaylandSurface);
     self.wlr_xwayland.events.new_surface.add(&self.new_xwayland_surface);
@@ -250,7 +231,7 @@ pub fn deinit(self: *Self) void {
     self.wlr_cursor.destroy();
     self.wlr_xcursor_manager.destroy();
     self.wlr_output_layout.destroy();
-    self.wlr_seat.destroy();
+    self.seat.deinit();
 
     // Destroy the server.
     self.wl_server.destroy();
@@ -263,37 +244,6 @@ fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
     log.info("Termination event loop.", .{});
     wl_server.terminate();
     return 0;
-}
-
-// Callback that gets triggered when the server seat wants to set a selection.
-pub fn requestSetSelection(listener: *wl.Listener(*wlr.Seat.event.RequestSetSelection), event: *wlr.Seat.event.RequestSetSelection) void {
-    const self = @fieldParentPtr(Self, "request_set_selection", listener);
-    log.debug("Signal: wlr_seat_request_set_selection", .{});
-
-    self.wlr_seat.setSelection(event.source, event.serial);
-}
-
-// Callback that gets triggered when the server seat wants to set the primary selection.
-pub fn requestSetPrimarySelection(listener: *wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection), event: *wlr.Seat.event.RequestSetPrimarySelection) void {
-    const self = @fieldParentPtr(Self, "request_set_primary_selection", listener);
-    log.debug("Signal: wlr_seat_request_set_primary_selection", .{});
-
-    self.wlr_seat.setPrimarySelection(event.source, event.serial);
-}
-
-// Callback that gets triggered when a client wants to set the cursor image.
-pub fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
-    const self = @fieldParentPtr(Self, "request_set_cursor", listener);
-    log.debug("Signal: wlr_seat_request_set_cursor", .{});
-
-    // Check if the client request to set the cursor is the currently focused surface.
-    const focused_client = self.wlr_seat.pointer_state.focused_client;
-    if (focused_client == event.seat_client) {
-        log.debug("Focused toplevel set the cursor surface", .{});
-        self.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
-    } else {
-        log.debug("Non-focused toplevel attempted to set the cursor surface. Request denied", .{});
-    }
 }
 
 // Callback that gets triggered on existence of a new output.
@@ -311,17 +261,18 @@ fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
 }
 
 // This callback is called when a new xdg toplevel is created ( xdg toplevels are basically application windows. )
-fn newXdgSurface(_: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface) void {
+fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface) void {
     // The role of the surface can be of 2 types:
     // - xdg_toplevel
     // - xdg_popup
     //
     // Popups include context menus and other floating windows that are in respect to any particular toplevel.
     // We only want to manage toplevel here, popups will be managed separately.
+    const self = @fieldParentPtr(Self, "new_xdg_surface", listener);
     log.debug("Signal: wlr_xdg_shell_new_surface", .{});
     switch (xdg_surface.role) {
         .toplevel => {
-            XdgToplevel.init(xdg_surface) catch {
+            XdgToplevel.init(self.seat.focused_output, xdg_surface) catch {
                 log.err("Failed to allocate memory", .{});
                 xdg_surface.resource.postNoMemory();
                 return;
@@ -332,9 +283,24 @@ fn newXdgSurface(_: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface)
 }
 
 // This callback is called when a new layer surface is created.
-pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), _: *wlr.LayerSurfaceV1) void {
+pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), wlr_layer_surface: *wlr.LayerSurfaceV1) void {
     log.debug("Signal: wlr_layer_shell_new_surface", .{});
-    //TODO: Populate this
+    log.debug(
+        "New layer surface: namespace {s}, layer {s}, anchor {b:0>4}, size {},{}, margin {},{},{},{}, exclusive_zone {}",
+        .{
+            wlr_layer_surface.namespace,
+            @tagName(wlr_layer_surface.pending.layer),
+            @bitCast(u32, wlr_layer_surface.pending.anchor),
+            wlr_layer_surface.pending.desired_width,
+            wlr_layer_surface.pending.desired_height,
+            wlr_layer_surface.pending.margin.top,
+            wlr_layer_surface.pending.margin.right,
+            wlr_layer_surface.pending.margin.bottom,
+            wlr_layer_surface.pending.margin.left,
+            wlr_layer_surface.pending.exclusive_zone,
+        },
+    );
+    // TODO: Finish this.
 }
 
 // This callback is called when a new xwayland surface is created.

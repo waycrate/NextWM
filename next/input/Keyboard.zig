@@ -51,7 +51,7 @@ fn handleKey(listener: *wl.Listener(*wlr.Keyboard.event.Key), event: *wlr.Keyboa
     const self = @fieldParentPtr(Self, "key", listener);
     log.debug("Signal: wlr_keyboard_key", .{});
 
-    self.server.input_manager.wlr_idle.notifyActivity(self.server.wlr_seat);
+    self.server.input_manager.wlr_idle.notifyActivity(self.server.seat.wlr_seat);
 
     // Translate libinput keycode -> xkbcommon
     const keycode = event.keycode + 8;
@@ -71,15 +71,15 @@ fn handleKey(listener: *wl.Listener(*wlr.Keyboard.event.Key), event: *wlr.Keyboa
         if (!(event.state == .released) and handleCompositorBindings(sym)) return;
     }
 
-    self.server.wlr_seat.setKeyboard(self.wlr_input_device);
-    self.server.wlr_seat.keyboardNotifyKey(event.time_msec, event.keycode, event.state);
+    self.server.seat.wlr_seat.setKeyboard(self.wlr_input_device);
+    self.server.seat.wlr_seat.keyboardNotifyKey(event.time_msec, event.keycode, event.state);
 }
 
 fn handleModifiers(listener: *wl.Listener(*wlr.Keyboard), _: *wlr.Keyboard) void {
     const self = @fieldParentPtr(Self, "modifiers", listener);
 
-    self.server.wlr_seat.setKeyboard(self.wlr_input_device);
-    self.server.wlr_seat.keyboardNotifyModifiers(&self.wlr_input_device.device.keyboard.modifiers);
+    self.server.seat.wlr_seat.setKeyboard(self.wlr_input_device);
+    self.server.seat.wlr_seat.keyboardNotifyModifiers(&self.wlr_input_device.device.keyboard.modifiers);
 }
 
 fn handleDestroy(listener: *wl.Listener(*wlr.InputDevice), _: *wlr.InputDevice) void {
