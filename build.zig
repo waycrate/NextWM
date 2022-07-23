@@ -40,9 +40,15 @@ pub fn build(builder: *std.build.Builder) !void {
     // Version information.
     const version = "0.1.0";
 
+    // Xwayland Lazy.
+    const xwayland_lazy = builder.option(bool, "xwayland_lazy", "Set to true to enable XwaylandLazy initialization") orelse false;
+
     // Create build options.
     const options = builder.addOptions();
+
+    // Adding build options which we can access in our source code.
     options.addOption([]const u8, "version", version);
+    options.addOption(bool, "xwayland_lazy", xwayland_lazy);
 
     // This block keeps the zig compositor version and the nextctl.h file version in sync.
     {

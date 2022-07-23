@@ -8,6 +8,7 @@
 const Self = @This();
 
 const allocator = @import("./utils/allocator.zig").allocator;
+const build_options = @import("build_options");
 const c = @import("./utils/c.zig");
 const log = std.log.scoped(.Server);
 const std = @import("std");
@@ -141,8 +142,7 @@ pub fn init(self: *Self) !void {
     try self.seat.init();
 
     // Initializing Xwayland.
-    // True here indicates that Xwayland will be launched on demand.
-    self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, true);
+    self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, build_options.xwayland_lazy);
     self.wlr_xwayland.setSeat(self.seat.wlr_seat);
 
     // Initialize wl_shm, linux-dmabuf and other buffer factory protocols.
