@@ -270,15 +270,12 @@ fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgS
     // We only want to manage toplevel here, popups will be managed separately.
     const self = @fieldParentPtr(Self, "new_xdg_surface", listener);
     log.debug("Signal: wlr_xdg_shell_new_surface", .{});
-    switch (xdg_surface.role) {
-        .toplevel => {
-            XdgToplevel.init(self.seat.focused_output, xdg_surface) catch {
-                log.err("Failed to allocate memory", .{});
-                xdg_surface.resource.postNoMemory();
-                return;
-            };
-        },
-        else => {},
+    if (xdg_surface.role == .toplevel) {
+        XdgToplevel.init(self.seat.focused_output, xdg_surface) catch {
+            log.err("Failed to allocate memory", .{});
+            xdg_surface.resource.postNoMemory();
+            return;
+        };
     }
 }
 
