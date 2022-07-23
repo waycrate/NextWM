@@ -29,6 +29,6 @@ uninstall:
 clean:
 	$(RM) -r zig-cache zig-out
 	$(MAKE) -C ./nextctl -s $@
-	$(RM) ./doc/*.1
+	$(RM) ./docs/*.1
 
 .PHONY: build clean install uninstall check
