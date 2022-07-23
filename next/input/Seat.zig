@@ -16,9 +16,14 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 const server = &@import("../next.zig").server;
 const Server = @import("../Server.zig");
+const Window = @import("../desktop/Window.zig");
 const Output = @import("../desktop/Output.zig");
 
 const default_seat_name: [*:0]const u8 = "next-seat0";
+const FocusTarget = union(enum) {
+    window: *Window,
+    none: void,
+};
 
 server: *Server = server,
 wlr_seat: *wlr.Seat,
@@ -28,6 +33,9 @@ pointer_drag: bool = false,
 
 // Currently focused wl_output
 focused_output: *Output = undefined,
+
+// Currently focused window.
+focused_window: FocusTarget = .none,
 
 request_set_selection: wl.Listener(*wlr.Seat.event.RequestSetSelection) = wl.Listener(*wlr.Seat.event.RequestSetSelection).init(requestSetSelection),
 request_set_primary_selection: wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection) = wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection).init(requestSetPrimarySelection),
@@ -77,4 +85,31 @@ pub fn requestStartDrag(listener: *wl.Listener(*wlr.Seat.event.RequestStartDrag)
 
     log.debug("Starting pointer drag", .{});
     self.wlr_seat.startPointerDrag(event.drag, event.serial);
+}
+
+pub fn setFocus(self: *Self, window: *Window) void {
+    // If currently focused surface is a layer then we don't want other apps to get the focus :)
+    if (self.focused == .layer) return;
+
+    if (window.output != self.focused_output) self.focusOutput(window.output);
+    //TODO: Finish this.
+}
+
+pub fn focusOutput(self: *Self, output: *Output) void {
+    if (self.focused_output == output or output == undefined) return;
+    self.focused_output = output;
+    log.debug("Focusing on output.", .{});
+
+    if (self.server.config.warp_cursor == .@"on-output-change") {
+        const layout_box = self.server.wlr_output_layout.getBox(self.focused_output.wlr_output).?;
+        if (!layout_box.containsPoint(self.server.wlr_cursor.x, self.server.wlr_cursor.y)) {
+            const geometry = output.getGeometry();
+
+            const lx = @intToFloat(f32, layout_box.x + @intCast(i32, geometry.width / 2));
+            const ly = @intToFloat(f32, layout_box.y + @intCast(i32, geometry.height / 2));
+            if (!self.server.wlr_cursor.warp(null, lx, ly)) {
+                log.err("Failed to warp cursor on output change", .{});
+            }
+        }
+    }
 }

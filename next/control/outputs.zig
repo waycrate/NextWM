@@ -24,10 +24,10 @@ pub fn listOutputs(
         const geometry = output.getGeometry();
         try writer.print("{s}\n\tx: {d} y: {d} width: {d} height: {d}\n", .{
             output.wlr_output.name,
-            geometry[0],
-            geometry[1],
-            geometry[2],
-            geometry[3],
+            geometry.x,
+            geometry.y,
+            geometry.width,
+            geometry.height,
         });
     }
     out.* = data.toOwnedSlice();

@@ -13,11 +13,17 @@ const log = std.log.scoped(.Config);
 
 const Window = @import("./desktop/Window.zig");
 
-/// Titles and app-id's of toplevels that should render client side decorations.
+pub const CursorWarpMode = enum {
+    disabled,
+    @"on-output-change",
+};
+
+// Titles and app-id's of toplevels that should render client side decorations.
 csd_app_ids: std.StringHashMapUnmanaged(void) = .{},
 csd_titles: std.StringHashMapUnmanaged(void) = .{},
 
 cursor_hide_when_typing: bool = false,
+warp_cursor: CursorWarpMode = .disabled,
 
 repeat_rate: i32 = 100,
 repeat_delay: i32 = 300,
