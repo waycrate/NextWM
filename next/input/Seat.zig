@@ -8,6 +8,7 @@
 const Self = @This();
 
 const std = @import("std");
+const assert = std.debug.assert;
 const allocator = @import("../utils/allocator.zig").allocator;
 const log = std.log.scoped(.Seat);
 
@@ -22,18 +23,21 @@ const default_seat_name: [*:0]const u8 = "next-seat0";
 server: *Server = server,
 wlr_seat: *wlr.Seat,
 
+// Flag to denote any on-going pointer-drags.
+pointer_drag: bool = false,
+
+// Currently focused wl_output
 focused_output: *Output = undefined,
 
 request_set_selection: wl.Listener(*wlr.Seat.event.RequestSetSelection) = wl.Listener(*wlr.Seat.event.RequestSetSelection).init(requestSetSelection),
 request_set_primary_selection: wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection) = wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection).init(requestSetPrimarySelection),
-request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor) = wl.Listener(*wlr.Seat.event.RequestSetCursor).init(requestSetCursor),
+request_start_drag: wl.Listener(*wlr.Seat.event.RequestStartDrag) = wl.Listener(*wlr.Seat.event.RequestStartDrag).init(requestStartDrag),
 
 pub fn init(self: *Self) !void {
     const seat = try wlr.Seat.create(server.wl_server, default_seat_name);
     self.* = .{ .wlr_seat = seat };
     self.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
     self.wlr_seat.events.request_set_primary_selection.add(&self.request_set_primary_selection);
-    self.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
 }
 
 pub fn deinit(self: *Self) void {
@@ -56,17 +60,21 @@ pub fn requestSetPrimarySelection(listener: *wl.Listener(*wlr.Seat.event.Request
     self.wlr_seat.setPrimarySelection(event.source, event.serial);
 }
 
-// Callback that gets triggered when a client wants to set the cursor image.
-pub fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
-    const self = @fieldParentPtr(Self, "request_set_cursor", listener);
-    log.debug("Signal: wlr_seat_request_set_cursor", .{});
+pub fn requestStartDrag(listener: *wl.Listener(*wlr.Seat.event.RequestStartDrag), event: *wlr.Seat.event.RequestStartDrag) void {
+    const self = @fieldParentPtr(Self, "request_start_drag", listener);
+    log.debug("Signal: wlr_seat_request_start_drag", .{});
 
-    // Check if the client request to set the cursor is the currently focused surface.
-    const focused_client = self.wlr_seat.pointer_state.focused_client;
-    if (focused_client == event.seat_client) {
-        log.debug("Focused toplevel set the cursor surface", .{});
-        self.server.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
-    } else {
-        log.debug("Non-focused toplevel attempted to set the cursor surface. Request denied", .{});
+    if (!self.wlr_seat.validatePointerGrabSerial(event.origin, event.serial)) {
+        log.err("Failed to validate pointer serial {}", .{event.serial});
+        if (event.drag.source) |source| source.destroy();
+        return;
     }
+
+    if (self.pointer_drag) {
+        log.debug("Ignoring drag request, another pointer drag is currently in progress", .{});
+        return;
+    }
+
+    log.debug("Starting pointer drag", .{});
+    self.wlr_seat.startPointerDrag(event.drag, event.serial);
 }
