@@ -41,7 +41,7 @@ pub fn build(builder: *std.build.Builder) !void {
     const version = "0.1.0";
 
     // Xwayland Lazy.
-    const xwayland_lazy = builder.option(bool, "xwayland_lazy", "Set to true to enable XwaylandLazy initialization") orelse true;
+    const xwayland_lazy = builder.option(bool, "xwayland_lazy", "Set to true to enable XwaylandLazy initialization") orelse false;
 
     // Create build options.
     const options = builder.addOptions();

@@ -1,6 +1,6 @@
 PREFIX=/usr
 BINDIR=$(PREFIX)/bin
-BUILD_FLAGS = -Dxwayland_lazy
+BUILD_FLAGS = -Dxwayland_lazy=true
 # ^^^ Possible options:
 # -Drelease-safe
 # -Drelease-fast

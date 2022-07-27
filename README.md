@@ -15,6 +15,8 @@ The wlroots ecosystem is hard to initially get into as per my experience and I w
 
 ## Building
 
+NOTE: By default Xwayland always executes in the background. The `-Dxwayland_lazy=true` flag was added to mitigate this issue however this may have slightly worse xwayland startup times.
+
 ### Depedencies
 
 1. C compiler.
