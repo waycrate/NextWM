@@ -24,6 +24,8 @@ const commands = std.ComptimeStringMap(
     fn ([]const [:0]const u8, *?[]const u8) Error!void,
     .{
         .{ "border-width",                  @import("border.zig").setWidth          },
+        // TODO: This is just a catch all. We will create border-focused, border-unfocused, etc soon.
+        .{ "border-color",                  @import("border.zig").setColor          },
         .{ "csd",                           @import("csd.zig").csdToggle            },
         .{ "exit",                          @import("exit.zig").exit                },
         .{ "list-inputs",                   @import("inputs.zig").listInputs        },

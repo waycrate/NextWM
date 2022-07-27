@@ -25,10 +25,13 @@ csd_titles: std.StringHashMapUnmanaged(void) = .{},
 cursor_hide_when_typing: bool = false,
 warp_cursor: CursorWarpMode = .disabled,
 
+// Red - default border color.
+border_color: [4]f32 = .{ 1, 0, 0, 1 },
+
 repeat_rate: i32 = 100,
 repeat_delay: i32 = 300,
 
-border_width: u8 = 0,
+border_width: u8 = 2,
 
 pub fn init() Self {
     log.debug("Initialized compositor config", .{});

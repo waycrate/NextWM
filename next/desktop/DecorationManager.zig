@@ -27,6 +27,7 @@ pub fn init(self: *Self) !void {
     self.* = .{
         .xdg_decoration_manager = try wlr.XdgDecorationManagerV1.create(server.wl_server),
     };
+    log.debug("Initializing DecorationManager", .{});
     self.xdg_decoration_manager.events.new_toplevel_decoration.add(&self.new_toplevel_decoration);
 }
 

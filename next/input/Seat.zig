@@ -99,6 +99,7 @@ pub fn focusOutput(self: *Self, output: *Output) void {
     if (self.focused_output == output or output == undefined) return;
     self.focused_output = output;
     log.debug("Focusing on output.", .{});
+    // TODO: finish this.
 
     if (self.server.config.warp_cursor == .@"on-output-change") {
         const layout_box = self.server.wlr_output_layout.getBox(self.focused_output.wlr_output).?;

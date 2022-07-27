@@ -46,6 +46,15 @@ decoration_manager: DecorationManager,
 input_manager: InputManager,
 seat: *Seat,
 
+// Layers
+layer_bg: *wlr.SceneNode,
+layer_bottom: *wlr.SceneNode,
+layer_float: *wlr.SceneNode,
+layer_nofocus: *wlr.SceneNode,
+layer_overlay: *wlr.SceneNode,
+layer_tile: *wlr.SceneNode,
+layer_top: *wlr.SceneNode,
+
 sigint_cb: *wl.EventSource,
 sigterm_cb: *wl.EventSource,
 sigkill_cb: *wl.EventSource,
@@ -53,6 +62,7 @@ sigabrt_cb: *wl.EventSource,
 sigquit_cb: *wl.EventSource,
 
 wlr_output_layout: *wlr.OutputLayout,
+wlr_output_manager: *wlr.OutputManagerV1,
 new_output: wl.Listener(*wlr.Output),
 
 outputs: std.ArrayListUnmanaged(*Output),
@@ -117,6 +127,9 @@ pub fn init(self: *Self) !void {
     self.wlr_output_layout = try wlr.OutputLayout.create();
     errdefer self.wlr_output_layout.destroy();
 
+    self.wlr_output_manager = try wlr.OutputManagerV1.create(self.wl_server);
+    _ = try wlr.XdgOutputManagerV1.create(self.wl_server, self.wlr_output_layout);
+
     // Create a wlr cursor object which is a wlroots utility to track the cursor on the screen.
     self.wlr_cursor = try wlr.Cursor.create();
     errdefer self.wlr_cursor.destroy();
@@ -140,6 +153,15 @@ pub fn init(self: *Self) !void {
     // Creating the seat.
     self.seat = try allocator.create(Seat);
     try self.seat.init();
+
+    // Creating toplevel layers:
+    self.layer_bg = &(try self.wlr_scene.node.createSceneTree()).node;
+    self.layer_bottom = &(try self.wlr_scene.node.createSceneTree()).node;
+    self.layer_float = &(try self.wlr_scene.node.createSceneTree()).node;
+    self.layer_nofocus = &(try self.wlr_scene.node.createSceneTree()).node;
+    self.layer_overlay = &(try self.wlr_scene.node.createSceneTree()).node;
+    self.layer_tile = &(try self.wlr_scene.node.createSceneTree()).node;
+    self.layer_top = &(try self.wlr_scene.node.createSceneTree()).node;
 
     // Initializing Xwayland.
     self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, build_options.xwayland_lazy);
