@@ -18,6 +18,8 @@ check:
 	zig fmt --check next/
 	zig fmt --check build.zig
 	$(MAKE) -C ./nextctl -s $@
+	cd ./nextctl-rs; cargo check
+	cd ./nextctl-rs; cargo fmt -- --check
 
 uninstall:
 	$(RM) $(PREFIX)/bin/next
@@ -29,7 +31,7 @@ uninstall:
 clean:
 	$(RM) -r zig-cache zig-out
 	$(MAKE) -C ./nextctl -s $@
-	$(RM) ./docs/*.1
+	$(RM) ./docs/*.gz
 	cd ./nextctl-rs/; cargo clean
 
 .PHONY: build clean install uninstall check

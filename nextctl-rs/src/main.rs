@@ -8,20 +8,17 @@ use crate::wayland::next_control_v1::next_control_v1::NextControlV1;
 fn main() -> Result<(), Box<dyn Error>> {
     let mut args = env::args();
     args.next();
-    loop {
-        match args.next() {
-            Some(flag) => match flag.as_str() {
-                "-h" | "--help" => {
-                    print_usage();
-                    exit(0);
-                }
-                "-v" | "--version" => {
-                    eprintln!(env!("CARGO_PKG_VERSION"));
-                    exit(0)
-                }
-                _ => {}
-            },
-            None => break,
+    for flag in args {
+        match flag.as_str() {
+            "-h" | "--help" => {
+                print_usage();
+                exit(0);
+            }
+            "-v" | "--version" => {
+                eprintln!(env!("CARGO_PKG_VERSION"));
+                exit(0)
+            }
+            _ => {}
         }
     }
     let display: Display = match Display::connect_to_env() {
@@ -35,7 +32,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let attached_display = display.attach(event_queue.token());
 
     let globals = GlobalManager::new(&attached_display);
-    if let Err(_) = event_queue.sync_roundtrip(&mut (), |_, _, _| unreachable!()) {
+    if event_queue
+        .sync_roundtrip(&mut (), |_, _, _| unreachable!())
+        .is_err()
+    {
         eprintln!("ERROR: wayland dispatch failed.");
         exit(1);
     };
@@ -51,13 +51,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     {
         let mut args = env::args();
         args.next();
-        loop {
-            match args.next() {
-                Some(flag) => {
-                    next_control.add_argument(flag.to_string());
-                }
-                None => break,
-            }
+        for flag in args {
+            next_control.add_argument(flag.to_string());
         }
     }
 
@@ -77,7 +72,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
-    if let Err(_) = event_queue.sync_roundtrip(&mut (), |_, _, _| unreachable!()) {
+    if event_queue
+        .sync_roundtrip(&mut (), |_, _, _| unreachable!())
+        .is_err()
+    {
         eprintln!("ERROR: wayland dispatch failed.");
         exit(1);
     };
@@ -87,9 +85,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 fn print_usage() {
     eprintln!("Usage: nextctl <command>");
     eprintln!("  -h, --help      Print this help message and exit.");
-    eprintln!("");
+    eprintln!();
     eprintln!("  -v, --version   Print the version number and exit.");
-    eprintln!("");
+    eprintln!();
     eprintln!("Complete documentation for recognized commands can be found in");
     eprintln!("the nextctl(1) man page.");
 }
