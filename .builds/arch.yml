@@ -4,6 +4,7 @@ packages:
     - make
     - pkgconf
     - scdoc
+    - rustup
     - wayland
     - wayland-protocols
     - wlroots
@@ -16,6 +17,11 @@ tasks:
     - build: |
           cd NextWM
           make
+    - build-rs: |
+          cd NextWM
+          rustup install stable
+          rustup default stable
+          zig build -Dnextctl-rs
     - fmt: |
           cd NextWM
           make check

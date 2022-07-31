@@ -1,0 +1,18 @@
+[package]
+description = "Command line tool to control NextWM"
+name = "nextctl-rs"
+version = "0.1.0"
+edition = "2021"
+authors = [ "Shinyzenith <aakashsensharma@gmail.com>", ]
+
+[build-dependencies]
+wayland-scanner = "0.29.4"
+
+[dependencies]
+wayland-client = "0.29.4"
+wayland-commons = "0.29.4"
+indoc = "1.0.6"
+
+[[bin]]
+name = "nextctl"
+path = "src/main.rs"

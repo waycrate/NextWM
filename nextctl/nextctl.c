@@ -74,7 +74,7 @@ static void next_handle_success(void *data, struct next_command_callback_v1 *cal
 
 static void next_handle_failure(void *data, struct next_command_callback_v1 *callback,
 								const char *failure_message) {
-	fprintf(stderr, "Error: %s", failure_message);
+	fprintf(stderr, "ERROR: %s", failure_message);
 	if (strcmp("Unknown command\n\0", failure_message) == 0 ||
 		strcmp("No command provided\n\0", failure_message) == 0) {
 		fputs(usage, stderr);

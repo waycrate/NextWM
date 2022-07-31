@@ -43,44 +43,23 @@ pub fn build(builder: *std.build.Builder) !void {
     // Xwayland Lazy.
     const xwayland_lazy = builder.option(bool, "xwayland-lazy", "Set to true to enable XwaylandLazy initialization") orelse false;
 
+    // Nextctl-rs.
+    const nextctl_rs = builder.option(bool, "nextctl-rs", "If enabled, rust version is built, else C.") orelse false;
+
     // Create build options.
     const options = builder.addOptions();
 
     // Adding build options which we can access in our source code.
     options.addOption([]const u8, "version", version);
     options.addOption(bool, "xwayland_lazy", xwayland_lazy);
+    options.addOption(bool, "nextctl_rs", nextctl_rs);
 
-    // This block keeps the zig compositor version and the nextctl.h file version in sync.
-    {
-        // The needle to search with.
-        const needle = "#define VERSION ";
-
-        // Get the file contents into a buffer.
-        const file = try std.fs.cwd().openFile("nextctl/nextctl.h", .{ .read = true });
-        const file_size = (try file.stat()).size;
-        const file_buffer = try file.readToEndAlloc(allocator, file_size);
-        defer allocator.free(file_buffer);
-
-        // Find the starting index of the needle, calculate the index of the ending " from that and then
-        // take a slice of the version string out.
-        const start_index = std.mem.indexOfPos(u8, file_buffer, 0, needle).? + needle.len;
-        const end_index = std.mem.indexOfPos(u8, file_buffer, start_index + 1, "\"").? + 1;
-        const old_version = file_buffer[start_index..end_index];
-
-        // This cannot be evaluated at comptime :(
-        const old_version_str = try std.fmt.allocPrint(allocator, "{s}{s}\n", .{ needle, old_version });
-        defer allocator.free(old_version_str);
-
-        const new_version_str = std.fmt.comptimePrint("{s}\"{s}\"\n", .{ needle, version });
-
-        // Replace old string with new one.
-        const replaced_str = try std.mem.replaceOwned(u8, allocator, file_buffer, old_version_str, new_version_str);
-        defer allocator.free(replaced_str);
-
-        // Write our changes to the header file.
-        try std.fs.cwd().writeFile("nextctl/nextctl.h", replaced_str);
-
-        // Building nextctl.
+    // Building nextctl
+    if (nextctl_rs) {
+        try syncVersion("version = ", "nextctl-rs/Cargo.toml", version);
+        _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd nextctl-rs; cargo build --release" });
+    } else {
+        try syncVersion("#define VERSION ", "nextctl/nextctl.h", version);
         _ = try builder.exec(&[_][]const u8{ "sh", "-c", "make clean nextctl -C ./nextctl" });
     }
 
@@ -149,8 +128,34 @@ pub fn build(builder: *std.build.Builder) !void {
     builder.installFile("./next.desktop", "share/wayland-sessions/next.desktop");
 
     // Install nextctl binary to the prefix.
-    builder.installFile("./nextctl/nextctl", "bin/nextctl");
+    if (nextctl_rs) {
+        builder.installFile("./nextctl-rs/target/release/nextctl", "bin/nextctl");
+    } else {
+        builder.installFile("./nextctl/nextctl", "bin/nextctl");
+    }
 
     // Install the binary to the mentioned prefix.
     exe.install();
+}
+
+pub fn syncVersion(needle: []const u8, file_name: []const u8, new_version: []const u8) !void {
+    const file = try std.fs.cwd().openFile(file_name, .{ .read = true });
+    const file_size = (try file.stat()).size;
+    const file_buffer = try file.readToEndAlloc(allocator, file_size);
+    defer allocator.free(file_buffer);
+
+    const start_index = std.mem.indexOfPos(u8, file_buffer, 0, needle).? + needle.len;
+    const end_index = std.mem.indexOfPos(u8, file_buffer, start_index + 1, "\"").? + 1;
+    const old_version = file_buffer[start_index..end_index];
+
+    const old_version_str = try std.fmt.allocPrint(allocator, "{s}{s}\n", .{ needle, old_version });
+    defer allocator.free(old_version_str);
+
+    const new_version_str = try std.fmt.allocPrint(allocator, "{s}\"{s}\"\n", .{ needle, new_version });
+    defer allocator.free(new_version_str);
+
+    const replaced_str = try std.mem.replaceOwned(u8, allocator, file_buffer, old_version_str, new_version_str);
+    defer allocator.free(replaced_str);
+
+    try std.fs.cwd().writeFile(file_name, replaced_str);
 }

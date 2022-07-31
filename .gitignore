@@ -5,3 +5,6 @@ zig-out
 nextctl/next-control-v1.h
 nextctl/next-control-v1.c
 nextctl/nextctl
+target/
+next_control_v1.rs
+

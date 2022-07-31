@@ -30,5 +30,6 @@ clean:
 	$(RM) -r zig-cache zig-out
 	$(MAKE) -C ./nextctl -s $@
 	$(RM) ./docs/*.1
+	cd ./nextctl-rs/; cargo clean
 
 .PHONY: build clean install uninstall check

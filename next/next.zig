@@ -166,11 +166,11 @@ pub fn log(
     if (@enumToInt(level) > @enumToInt(runtime_log_level)) return;
 
     // Performing some string formatting and then printing it.
-    const level_txt = comptime toUpper(level.asText()) ++ " ";
+    const level_txt = comptime toUpper(level.asText());
     const scope_txt = "[" ++ @tagName(scope) ++ "] ";
 
     const stderr = io.getStdErr().writer();
-    stderr.print(scope_txt ++ level_txt ++ format ++ "\n", args) catch {};
+    stderr.print(scope_txt ++ "(" ++ level_txt ++ ") " ++ format ++ "\n", args) catch {};
 }
 
 // Takes a string, uppercases it and returns a sentinel terminated string.

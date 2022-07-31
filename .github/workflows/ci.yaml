@@ -12,7 +12,10 @@ jobs:
               run: |
                   sed -i 's/SigLevel    = Required DatabaseOptional/SigLevel    = Optional TrustAll/' /etc/pacman.conf
                   pacman --noconfirm --noprogressbar -Syyu
-                  pacman --noconfirm --noprogressbar -Sy wlroots wayland wayland-protocols xorg-xwayland zig make git pkgconf scdoc clang
+                  pacman --noconfirm --noprogressbar -Sy wlroots wayland wayland-protocols xorg-xwayland zig make git pkgconf scdoc clang rustup
+                  pacman --noconfirm --noprogressbar -Sy wlroots wayland wayland-protocols xorg-xwayland zig make git pkgconf scdoc clang rustup
+                  rustup install stable
+                  rustup default stable
 
             - name: Checkout NextWM
               uses: actions/checkout@v2
@@ -26,3 +29,7 @@ jobs:
             - name: Build NextWM
               run: |
                   make
+
+            - name: Build NextWM
+              run: |
+                  zig build -Dnextctl-rs
