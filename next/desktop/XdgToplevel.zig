@@ -31,6 +31,8 @@ scene_surface: *wlr.SceneNode = undefined,
 
 // TODO: Some more toplevel listeners should go here.
 map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleMap),
+unmap: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleUnmap),
+destroy: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleDestroy),
 set_app_id: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(setAppId),
 set_title: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(setTitle),
 
@@ -58,13 +60,13 @@ pub fn init(output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!vo
     };
 
     xdg_surface.events.map.add(&window.backend.xdg_toplevel.map);
+    xdg_surface.events.unmap.add(&window.backend.xdg_toplevel.unmap);
+    xdg_surface.events.destroy.add(&window.backend.xdg_toplevel.destroy);
+
     xdg_surface.role_data.toplevel.events.set_app_id.add(&window.backend.xdg_toplevel.set_app_id);
     xdg_surface.role_data.toplevel.events.set_title.add(&window.backend.xdg_toplevel.set_title);
-    //xdg_surface.events.map.destroy(&self.destroy);
-    // TODO: On destroy or unmap, border list should be freed.
     //xdg_surface.events.map.new_popup(&self.new_popup);
     //xdg_surface.events.map.new_subsurface(&self.new_subsurface);
-    //xdg_surface.events.map.unmap(&self.unmap);
     //
     //Handle existing subsurfaces.
 }
@@ -120,6 +122,32 @@ pub fn handleMap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) vo
         return;
     };
     log.debug("Window '{s}' mapped", .{self.getTitle()});
+}
+
+pub fn handleUnmap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+    const self = @fieldParentPtr(Self, "unmap", listener);
+    log.debug("Signal: wlr_xdg_surface_unmap", .{});
+
+    if (std.mem.indexOfScalar(*Window, server.mapped_windows.items, self.window)) |i| {
+        _ = server.mapped_windows.orderedRemove(i);
+    }
+    if (server.seat.wlr_seat.keyboard_state.focused_surface) |focused_surface| {
+        if (focused_surface == self.xdg_surface.surface) {
+            server.seat.wlr_seat.keyboardClearFocus();
+        }
+    }
+    if (server.seat.wlr_seat.pointer_state.focused_surface) |focused_surface| {
+        if (focused_surface == self.xdg_surface.surface) {
+            server.seat.wlr_seat.keyboardClearFocus();
+        }
+    }
+}
+
+pub fn handleDestroy(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+    const self = @fieldParentPtr(Self, "destroy", listener);
+    log.debug("Signal: wlr_xdg_surface_destroy", .{});
+
+    self.window.handleDestroy();
 }
 
 pub fn resize(self: *Self, x: c_int, y: c_int, width: c_int, height: c_int) void {

@@ -72,3 +72,37 @@ pub fn notifyTitle(self: *Self, title: [*:0]const u8) void {
     log.debug("Title data propagated to ftm handle", .{});
     self.wlr_foreign_toplevel_handle.setTitle(title);
 }
+
+pub fn setMon(self: *Self, output: *Output) void {
+    if (output == self.output) return;
+    switch (self.backend) {
+        .xdg_toplevel => |xdg_toplevel| {
+            // TODO: Is this performant?
+            xdg_toplevel.xdg_surface.surface.sendLeave(self.output.wlr_output);
+            xdg_toplevel.xdg_surface.surface.sendEnter(output.wlr_output);
+        },
+    }
+    self.output = output;
+}
+
+// Called by backend specific implementation on destroy event.
+pub fn handleDestroy(self: *Self) void {
+    switch (self.backend) {
+        .xdg_toplevel => |*xdg_toplevel| {
+            for (xdg_toplevel.borders.items) |border| {
+                border.node.destroy();
+            }
+            xdg_toplevel.borders.deinit(allocator);
+            xdg_toplevel.scene_node.destroy();
+        },
+    }
+    if (std.mem.indexOfScalar(*Self, self.server.mapped_windows.items, self)) |i| {
+        log.warn("Window destroyed before unmap event.", .{});
+        _ = self.server.mapped_windows.orderedRemove(i);
+    } else {
+        if (std.mem.indexOfScalar(*Self, server.pending_windows.items, self)) |i| {
+            _ = self.server.pending_windows.orderedRemove(i);
+        }
+    }
+    self.wlr_foreign_toplevel_handle.destroy();
+}
