@@ -4,6 +4,10 @@ Manual tiling wayland compositor written with wlroots aimed to be a bspwm clone.
 
 Note: NextWM is still a work in progress project. It won't be useable anytime soon, but when it is I will be the first one to spam screenshots of it in the readme.
 
+<p align=center>
+    <a href="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/arch.yml"><img src="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/arch.yml.svg"</a>
+</p>
+
 ## License:
 
 The entire project is licensed as BSD-2 "Simplified" unless stated otherwise in the file header.

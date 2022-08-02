@@ -18,22 +18,25 @@ const wlr = @import("wlroots");
 const Server = @import("../Server.zig");
 const Window = @import("Window.zig");
 const Output = @import("Output.zig");
+const XdgPopup = @import("XdgPopup.zig");
 
 window: *Window,
 
 xdg_surface: *wlr.XdgSurface,
 
 borders: std.ArrayListUnmanaged(*wlr.SceneRect) = .{},
+popups: std.ArrayListUnmanaged(*XdgPopup) = .{},
+
 geometry: wlr.Box = undefined,
 draw_borders: bool = true,
 scene_node: *wlr.SceneNode = undefined,
 scene_surface: *wlr.SceneNode = undefined,
 
-// TODO: Some more toplevel listeners should go here.
 map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleMap),
 unmap: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleUnmap),
 destroy: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleDestroy),
 set_app_id: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(setAppId),
+new_popup: wl.Listener(*wlr.XdgPopup) = wl.Listener(*wlr.XdgPopup).init(newPopup),
 set_title: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(setTitle),
 
 pub fn init(output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
@@ -46,14 +49,12 @@ pub fn init(output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!vo
         log.err("Failed to allocate memory", .{});
         return;
     };
-    errdefer allocator.free(window);
+    errdefer allocator.destroy(window);
 
-    window.init(output, .{
-        .xdg_toplevel = .{
-            .window = window,
-            .xdg_surface = xdg_surface,
-        },
-    }) catch {
+    window.init(output, .{ .xdg_toplevel = .{
+        .window = window,
+        .xdg_surface = xdg_surface,
+    } }) catch {
         allocator.destroy(window);
         log.err("Failed to create a window out of the toplevel", .{});
         return;
@@ -62,13 +63,13 @@ pub fn init(output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!vo
     xdg_surface.events.map.add(&window.backend.xdg_toplevel.map);
     xdg_surface.events.unmap.add(&window.backend.xdg_toplevel.unmap);
     xdg_surface.events.destroy.add(&window.backend.xdg_toplevel.destroy);
+    xdg_surface.events.new_popup.add(&window.backend.xdg_toplevel.new_popup);
 
     xdg_surface.role_data.toplevel.events.set_app_id.add(&window.backend.xdg_toplevel.set_app_id);
     xdg_surface.role_data.toplevel.events.set_title.add(&window.backend.xdg_toplevel.set_title);
-    //xdg_surface.events.map.new_popup(&self.new_popup);
-    //xdg_surface.events.map.new_subsurface(&self.new_subsurface);
-    //
-    //Handle existing subsurfaces.
+    // Maybe eventually we'll support these?
+    // TODO: xdg_surface.events.map.new_subsurface(&self.new_subsurface);
+    // TODO: Handle existing subsurfaces.
 }
 
 pub fn handleMap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
@@ -107,7 +108,8 @@ pub fn handleMap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) vo
     self.window.wlr_foreign_toplevel_handle.setTitle(self.getTitle());
     self.window.wlr_foreign_toplevel_handle.setAppId(self.getAppId());
 
-    // TODO: Figure out why the following causes a segfault.
+    // TODO: This segfaults probably because we infer wlr_output from the seats currently focused output which is initially undefined
+    // TODO: Fix me
     // self.window.wlr_foreign_toplevel_handle.outputEnter(self.window.output.wlr_output);
 
     // Find index of self from pending_windows and remove it.
@@ -122,6 +124,15 @@ pub fn handleMap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) vo
         return;
     };
     log.debug("Window '{s}' mapped", .{self.getTitle()});
+}
+
+pub fn newPopup(listener: *wl.Listener(*wlr.XdgPopup), xdg_popup: *wlr.XdgPopup) void {
+    const self = @fieldParentPtr(Self, "new_popup", listener);
+    log.debug("Signal: wlr_xdg_surface_new_popup", .{});
+
+    if (XdgPopup.create(xdg_popup, .{ .xdg_toplevel = self })) |popup| {
+        self.popups.append(allocator, popup) catch return;
+    }
 }
 
 pub fn handleUnmap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
