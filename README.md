@@ -32,8 +32,8 @@ NOTE: By default Nextctl C codebase is compiled and put in the mentioned `--pref
 
 ### Depedencies
 
-1. `clang` (Build-time only)
-1. `cargo` (Only if you enable -Dnextctl-rs)
+1. `clang` (Optional. Required if you build C implementation of Nextctl)
+1. `cargo` (Optional. Required if you build Rust implementation of Nextctl)
 1. `libinput`
 1. `make`
 1. `pixman`
