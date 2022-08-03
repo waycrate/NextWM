@@ -1,0 +1,35 @@
+image: ubuntu/jammy
+packages:
+    - cargo
+    - rustfmt
+    - clang
+    - clang-format
+    - git
+    - libwayland-dev
+    - libwlroots-dev
+    - make
+    - pkgconf
+    - scdoc
+    - wayland-protocols
+    - xwayland
+sources:
+    - https://git.sr.ht/~shinyzenith/NextWM
+tasks:
+    - install-lang: |
+          wget https://ziglang.org/download/0.9.1/zig-linux-x86_64-0.9.1.tar.xz
+          tar -xf zig-linux-x86_64-0.9.1.tar.xz
+          sudo mv ./zig-linux-x86_64-0.9.1/zig /usr/bin
+          sudo mkdir -p /usr/lib/zig
+          sudo mv ./zig-linux-x86_64-0.9.1/lib/* /usr/lib
+
+    - build: |
+          cd NextWM
+          make
+
+    - build-rs: |
+          cd NextWM
+          zig build -Dnextctl-rs
+
+    - fmt: |
+          cd NextWM
+          make check
