@@ -16,11 +16,12 @@ sources:
     - https://git.sr.ht/~shinyzenith/NextWM
 tasks:
     - install-lang: |
-          wget https://ziglang.org/download/0.9.1/zig-linux-x86_64-0.9.1.tar.xz
-          tar -xf zig-linux-x86_64-0.9.1.tar.xz
-          sudo mv ./zig-linux-x86_64-0.9.1/zig /usr/bin
+          ZIG_VERSION=0.9.1
+          wget https://ziglang.org/download/0.9.1/zig-linux-x86_64-$ZIG_VERSION.tar.xz
+          tar -xf zig-linux-x86_64-$ZIG_VERSION.tar.xz
+          sudo mv ./zig-linux-x86_64-$ZIG_VERSION/zig /usr/bin
           sudo mkdir -p /usr/lib/zig
-          sudo mv ./zig-linux-x86_64-0.9.1/lib/* /usr/lib
+          sudo mv ./zig-linux-x86_64-$ZIG_VERSION/lib/* /usr/lib
 
     - build: |
           cd NextWM
