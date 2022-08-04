@@ -88,6 +88,9 @@ pub fn requestStartDrag(listener: *wl.Listener(*wlr.Seat.event.RequestStartDrag)
 }
 
 pub fn setFocus(self: *Self, window: *Window) void {
+    //TODO: On switching tty's keyboards are destroyed and hence leave the surface, when we switch back to the compositor, the keyboard is recreated
+    //TODO: and events are sent apart from enter event, which is a violation of wayland protocol, so fix that.
+    //TODO: https://github.com/riverwm/river/commit/d4b2f2b0fc5766c8ae14a6f42fe76d058bfb3505
     // If currently focused surface is a layer then we don't want other apps to get the focus :)
     if (self.focused == .layer) return;
 
