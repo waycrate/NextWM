@@ -17,11 +17,11 @@ sources:
 tasks:
     - install-lang: |
           ZIG_VERSION=0.9.1
-          wget https://ziglang.org/download/0.9.1/zig-linux-x86_64-$ZIG_VERSION.tar.xz
-          tar -xf zig-linux-x86_64-$ZIG_VERSION.tar.xz
+
+          wget -nv https://ziglang.org/download/$ZIG_VERSION/zig-linux-x86_64-$ZIG_VERSION.tar.xz
+          tar -xvf zig-linux-x86_64-$ZIG_VERSION.tar.xz
           sudo mv ./zig-linux-x86_64-$ZIG_VERSION/zig /usr/bin
-          sudo mkdir -p /usr/lib/zig
-          sudo mv ./zig-linux-x86_64-$ZIG_VERSION/lib/* /usr/lib
+          sudo mv ./zig-linux-x86_64-$ZIG_VERSION/lib /usr/lib/zig
 
     - build: |
           cd NextWM
