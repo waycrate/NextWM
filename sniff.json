@@ -1,7 +1,7 @@
 {
     ".*.zig": ["make"],
     ".*.c": ["make"],
-    ".*.rs": ["cargo check"],
+    ".*.rs": ["cargo clippy"],
     "sniff_ignore_dir": ["zig-out", "zig-cache", ".git", "target"],
     "sniff_ignore_file": [],
     "sniff_cooldown": 650

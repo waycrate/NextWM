@@ -11,7 +11,6 @@ wayland-scanner = "0.29.4"
 [dependencies]
 wayland-client = "0.29.4"
 wayland-commons = "0.29.4"
-indoc = "1.0.6"
 
 [[bin]]
 name = "nextctl"

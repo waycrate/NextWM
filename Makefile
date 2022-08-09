@@ -1,12 +1,6 @@
 PREFIX=/usr
 BINDIR=$(PREFIX)/bin
 BUILD_FLAGS = -Dxwayland-lazy
-# ^^^ Possible options:
-# -Drelease-safe
-# -Drelease-fast
-# -Drelease-small
-#
-# Read zig documentation to find out their usecases.
 
 build:
 	zig build $(BUILD_FLAGS)
