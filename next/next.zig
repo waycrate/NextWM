@@ -7,6 +7,7 @@
 
 const allocator = @import("./utils/allocator.zig").allocator;
 const build_options = @import("build_options");
+const c = @import("./utils/c.zig");
 const flags = @import("./utils/flags.zig");
 const fs = std.fs;
 const io = std.io;
@@ -135,6 +136,16 @@ pub fn main() anyerror!void {
         .warn, .err => .err,
     });
 
+    // Ignore SIGPIPE so the compositor doesn't get killed when attempting to write to a read-end-closed socket.
+    // TODO: Remove this handler entirely: https://github.com/ziglang/zig/pull/11982
+    const sig_ign = os.Sigaction{
+        // TODO: Remove this casting after https://github.com/ziglang/zig/pull/12410
+        .handler = .{ .handler = @intToPtr(os.Sigaction.handler_fn, @ptrToInt(os.SIG.IGN)) },
+        .mask = os.empty_sigset,
+        .flags = 0,
+    };
+    os.sigaction(os.SIG.PIPE, &sig_ign, null);
+
     // Attempt to initialize the server, deinitialize it once the block ends.
     std.log.info("Initializing server", .{});
     try server.init();
@@ -142,13 +153,39 @@ pub fn main() anyerror!void {
     try server.start();
 
     // Fork into a child process.
-    var child = try std.ChildProcess.init(&[_][]const u8{ "/bin/sh", "-c", startup_command }, allocator);
+    const pid = try os.fork();
+    if (pid == 0) {
+        var errno = os.errno(c.setsid());
+        if (@enumToInt(errno) != 0) {
+            std.log.err("Setsid syscall failed: {any}", .{errno});
+        }
 
-    // Deinitialize the child on returning.
-    defer child.deinit();
+        // SET_MASK sets the blocked signal to an empty signal set in this case.
+        errno = os.errno(os.system.sigprocmask(os.SIG.SETMASK, &os.empty_sigset, null));
+        if (@enumToInt(errno) != 0) {
+            std.log.err("Sigprocmask syscall failed: {any}", .{errno});
+        }
 
-    // Spawn the child.
-    try child.spawn();
+        // Setting default handler for sigpipe.
+        const sig_dfl = os.Sigaction{
+            // TODO: Remove this casting after https://github.com/ziglang/zig/pull/12410
+            .handler = .{ .handler = @intToPtr(?os.Sigaction.handler_fn, @ptrToInt(os.SIG.DFL)) },
+            .mask = os.empty_sigset,
+            .flags = 0,
+        };
+        os.sigaction(os.SIG.PIPE, &sig_dfl, null);
+
+        // NOTE: it's convention for the first element in the argument vector to be same as the invoking binary.
+        // Read https://man7.org/linux/man-pages/man2/execve.2.html for more info.
+        const c_argv = [_:null]?[*:0]const u8{ "/bin/sh", "-c", startup_command, null };
+        os.execveZ("/bin/sh", &c_argv, std.c.environ) catch os.exit(1);
+    }
+
+    // Sending sigterm to a negative pid traverses down it's child list and sends sigterm to each of them.
+    // Read https://man7.org/linux/man-pages/man2/kill.2.html for more info.
+    defer os.kill(-pid, os.SIG.TERM) catch |err| {
+        std.log.err("Failed to kill init-child: {d} {s}", .{ pid, @errorName(err) });
+    };
 
     // Run the server!
     std.log.info("Running NextWM event loop", .{});
