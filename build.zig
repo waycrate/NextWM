@@ -113,9 +113,16 @@ pub fn build(builder: *std.build.Builder) !void {
         .path = .{ .path = "deps/zig-wlroots/src/wlroots.zig" },
         .dependencies = &[_]std.build.Pkg{ wayland, xkbcommon, pixman },
     };
-
     exe.addPackage(wlroots);
     exe.linkSystemLibrary("wlroots");
+
+    // Some other libraries we need to link with.
+    exe.linkSystemLibrary("libevdev");
+    exe.linkSystemLibrary("libinput");
+
+    // Adding our log wrapper to the source file list.
+    // -O3 does agressive optimizations.
+    exe.addCSourceFile("./next/utils/wlr_log.c", &[_][]const u8{ "-std=c18", "-O3" });
 
     // Install the .desktop file to the prefix.
     builder.installFile("./next.desktop", "share/wayland-sessions/next.desktop");

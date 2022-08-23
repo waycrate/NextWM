@@ -130,7 +130,8 @@ pub fn main() anyerror!void {
     }
 
     // Initializing wlroots log utility with debug level.
-    wlr.log.init(switch (runtime_log_level) {
+    // TODO: Remove this entirely when zig gets good var-arg support.
+    wlr_fmt_log(switch (runtime_log_level) {
         .debug => .debug,
         .info => .info,
         .warn, .err => .err,
@@ -190,6 +191,16 @@ pub fn main() anyerror!void {
     // Run the server!
     std.log.info("Running NextWM event loop", .{});
     server.wl_server.run();
+}
+
+extern fn wlr_fmt_log(importance: wlr.log.Importance) void;
+export fn wlr_log_callback(importance: wlr.log.Importance, ptr: [*:0]const u8, len: usize) void {
+    switch (importance) {
+        .err => log(.err, .Wlroots, "{s}", .{ptr[0..len]}),
+        .info => log(.info, .Wlroots, "{s}", .{ptr[0..len]}),
+        .debug => log(.debug, .Wlroots, "{s}", .{ptr[0..len]}),
+        .silent, .last => unreachable,
+    }
 }
 
 // Custom logging function.

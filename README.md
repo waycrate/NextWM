@@ -35,6 +35,7 @@ NOTE: By default Nextctl C codebase is compiled and put in the mentioned `--pref
 1. `clang` (Optional. Required if you build C implementation of Nextctl)
 1. `cargo` (Optional. Required if you build Rust implementation of Nextctl)
 1. `libinput`
+1. `libevdev`
 1. `make`
 1. `pixman`
 1. `pkg-config`
@@ -68,4 +69,3 @@ https://todo.sr.ht/~shinyzenith/NextWM
 ## Support
 
 -   https://matrix.to/#/#waycrate-tools:matrix.org
--   https://discord.gg/KKZRDYrRYW
