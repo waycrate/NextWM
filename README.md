@@ -36,7 +36,7 @@ NOTE: By default Nextctl C codebase is compiled and put in the mentioned `--pref
 1. `cargo` (Optional. Required if you build Rust implementation of Nextctl)
 1. `libinput`
 1. `libevdev`
-1. `make`
+1. `make` (You can run `zig build -Dxwayland-lazy` instead. Makefile has been bundled for convenience.)
 1. `pixman`
 1. `pkg-config`
 1. `scdoc` (Optional. If scdoc binary is not found, man pages are not generated.)
