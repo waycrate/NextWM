@@ -335,9 +335,11 @@ pub fn newXwaylandSurface(listener: *wl.Listener(*wlr.XwaylandSurface), xwayland
 }
 
 // Callback that gets triggered on existence of a new output.
-fn setMode(_: *wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode), event: *wlr.OutputPowerManagerV1.event.SetMode) void {
+fn setMode(listener: *wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode), event: *wlr.OutputPowerManagerV1.event.SetMode) void {
+    const self = @fieldParentPtr(Self, "set_mode", listener);
     const mode = event.mode == .on;
     const state = if (mode) "Enabling" else "Disabling";
+    log.debug("Signal: wlr_output_power_manager_v1_set_mode", .{});
     log.debug(
         "{s} output {s}",
         .{
@@ -345,8 +347,30 @@ fn setMode(_: *wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode), event: *wlr
             event.output.name,
         },
     );
+
     event.output.enable(mode);
     event.output.commit() catch {
         log.err("Output commit failed: {s}", .{event.output.name});
+        return;
     };
+
+    // If the commit didn't fail then go ahead and edit the output_layout :)
+    switch (event.mode) {
+        .on => {
+            if (self.wlr_output_layout.get(event.output)) |_| {
+                log.debug("Output is already in output_layout", .{});
+            } else {
+                log.debug("Adding output to output_layout", .{});
+                self.wlr_output_layout.addAuto(event.output);
+            }
+        },
+        .off => {
+            if (self.wlr_output_layout.get(event.output)) |_| {
+                self.wlr_output_layout.remove(event.output);
+            } else {
+                log.debug("Output is already absent from the output_layout, not removing", .{});
+            }
+        },
+        _ => {},
+    }
 }
