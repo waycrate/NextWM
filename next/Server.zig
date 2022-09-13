@@ -244,10 +244,29 @@ pub fn deinit(self: *Self) void {
     self.wlr_renderer.destroy();
     self.wlr_allocator.destroy();
 
+    for (self.mapped_windows.items) |item| {
+        allocator.destroy(item);
+    }
     self.mapped_windows.deinit(allocator);
+
+    for (self.pending_windows.items) |item| {
+        allocator.destroy(item);
+    }
     self.pending_windows.deinit(allocator);
+
+    for (self.outputs.items) |item| {
+        allocator.destroy(item);
+    }
     self.outputs.deinit(allocator);
+
+    for (self.cursors.items) |item| {
+        allocator.destroy(item);
+    }
     self.cursors.deinit(allocator);
+
+    for (self.keyboards.items) |item| {
+        allocator.destroy(item);
+    }
     self.keyboards.deinit(allocator);
 
     self.wlr_cursor.destroy();
