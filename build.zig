@@ -6,8 +6,12 @@
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const std = @import("std"); // Zig standard library, duh!
+
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-const allocator = gpa.allocator();
+pub const allocator = gpa.allocator();
+
+const NextctlStep = @import("nextctl.zig");
+const ScdocStep = @import("scdoc.zig");
 
 pub fn build(builder: *std.build.Builder) !void {
     const ScanProtocolsStep = @import("deps/zig-wayland/build.zig").ScanProtocolsStep;
@@ -71,8 +75,7 @@ pub fn build(builder: *std.build.Builder) !void {
         };
         break :blk true;
     }) {
-        const scdoc = try ScdocStep.create(builder);
-        try scdoc.install();
+        try ScdocStep.build(builder, "./docs/");
     }
 
     const nextctl = try NextctlStep.create(builder, if (nextctl_rs) .rust else .c, version);
@@ -130,125 +133,3 @@ pub fn build(builder: *std.build.Builder) !void {
     // Install the binary to the mentioned prefix.
     exe.install();
 }
-
-const ScdocStep = struct {
-    const scd_paths = [_][]const u8{
-        "./docs/next.1.scd",
-        "./docs/nextctl.1.scd",
-    };
-
-    builder: *std.build.Builder,
-    step: std.build.Step,
-
-    fn create(builder: *std.build.Builder) !*ScdocStep {
-        const self = try allocator.create(ScdocStep);
-        self.* = .{
-            .builder = builder,
-            .step = std.build.Step.init(.custom, "Generate man pages", allocator, make),
-        };
-        return self;
-    }
-
-    fn make(step: *std.build.Step) !void {
-        const self = @fieldParentPtr(ScdocStep, "step", step);
-        for (scd_paths) |path| {
-            const cmd = try std.fmt.allocPrint(
-                allocator,
-                "scdoc < {s} > {s}.gz",
-                .{ path, path[0..(path.len - 4)] },
-            );
-            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", cmd });
-        }
-    }
-
-    fn install(self: *ScdocStep) !void {
-        self.builder.getInstallStep().dependOn(&self.step);
-        for (scd_paths) |p| {
-            const path = try std.fmt.allocPrint(allocator, "{s}.gz", .{p[0..(p.len - 4)]});
-            defer allocator.free(path);
-            const path_no_ext = path[0..(path.len - 3)];
-            const basename_no_ext = std.fs.path.basename(path_no_ext);
-            const section = path_no_ext[(path_no_ext.len - 1)..];
-
-            const output = try std.fmt.allocPrint(
-                allocator,
-                "share/man/man{s}/{s}.gz",
-                .{ section, basename_no_ext },
-            );
-            defer allocator.free(output);
-
-            self.builder.installFile(path, output);
-        }
-    }
-};
-
-pub const NextctlStep = struct {
-    const BuildType = enum {
-        c,
-        rust,
-    };
-
-    builder: *std.build.Builder,
-    step: std.build.Step,
-    build_type: BuildType,
-    version: []const u8,
-
-    fn create(builder: *std.build.Builder, build_type: BuildType, version: []const u8) !*NextctlStep {
-        const self = try allocator.create(NextctlStep);
-        self.* = .{
-            .builder = builder,
-            .step = std.build.Step.init(.custom, "Build nextctl", allocator, make),
-            .build_type = build_type,
-            .version = version,
-        };
-        return self;
-    }
-
-    fn make(step: *std.build.Step) !void {
-        const self = @fieldParentPtr(NextctlStep, "step", step);
-        switch (self.build_type) {
-            .c => {
-                try syncVersion("#define VERSION ", "nextctl/nextctl.h", self.version);
-                _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "make clean nextctl -C ./nextctl" });
-            },
-            .rust => {
-                try syncVersion("version = ", "nextctl-rs/Cargo.toml", self.version);
-                _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "cd nextctl-rs; cargo build --release" });
-            },
-        }
-    }
-
-    fn install(self: *NextctlStep) !void {
-        self.builder.getInstallStep().dependOn(&self.step);
-        switch (self.build_type) {
-            .c => {
-                self.builder.installFile("./nextctl/nextctl", "bin/nextctl");
-            },
-            .rust => {
-                self.builder.installFile("./nextctl-rs/target/release/nextctl", "bin/nextctl");
-            },
-        }
-    }
-
-    fn syncVersion(needle: []const u8, file_name: []const u8, new_version: []const u8) !void {
-        const file = try std.fs.cwd().openFile(file_name, .{ .read = true });
-        const file_size = (try file.stat()).size;
-        const file_buffer = try file.readToEndAlloc(allocator, file_size);
-        defer allocator.free(file_buffer);
-
-        const start_index = std.mem.indexOfPos(u8, file_buffer, 0, needle).? + needle.len;
-        const end_index = std.mem.indexOfPos(u8, file_buffer, start_index + 1, "\"").? + 1;
-        const old_version = file_buffer[start_index..end_index];
-
-        const old_version_str = try std.fmt.allocPrint(allocator, "{s}{s}\n", .{ needle, old_version });
-        defer allocator.free(old_version_str);
-
-        const new_version_str = try std.fmt.allocPrint(allocator, "{s}\"{s}\"\n", .{ needle, new_version });
-        defer allocator.free(new_version_str);
-
-        const replaced_str = try std.mem.replaceOwned(u8, allocator, file_buffer, old_version_str, new_version_str);
-        defer allocator.free(replaced_str);
-
-        try std.fs.cwd().writeFile(file_name, replaced_str);
-    }
-};
