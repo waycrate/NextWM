@@ -28,13 +28,12 @@ pub fn build(builder: *std.build.Builder, docs_dir: []const u8) !void {
                     defer allocator.free(path);
 
                     const path_no_ext = path[0..(path.len - 3)];
-                    const basename_no_ext = std.fs.path.basename(path_no_ext);
                     const section = path_no_ext[(path_no_ext.len - 1)..];
 
                     const output = try std.fmt.allocPrint(
                         allocator,
-                        "share/man/man{s}/{s}.gz",
-                        .{ section, basename_no_ext },
+                        "share/man/man{s}/{s}",
+                        .{ section, path },
                     );
                     defer allocator.free(output);
 
