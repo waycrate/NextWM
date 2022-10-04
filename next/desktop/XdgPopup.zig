@@ -26,18 +26,20 @@ const ParentSurface = union(enum) {
 
 wlr_xdg_popup: *wlr.XdgPopup,
 parent: ParentSurface,
+mapped: bool = false,
 
-popups: std.ArrayListUnmanaged(*wlr.XdgPopup) = .{},
+popups: std.ArrayListUnmanaged(*Self) = .{},
 server: *Server = server,
 
 output_box: wlr.Box = undefined,
 
-//map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleMap),
-//unmap: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleUnmap),
-//destroy: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleDestroy),
-//new_popup: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(newPopup),
+//TODO: Handle SubSurfaces
+map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleMap),
+unmap: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleUnmap),
+surface_destroy: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleDestroy),
+new_popup: wl.Listener(*wlr.XdgPopup) = wl.Listener(*wlr.XdgPopup).init(handleNewPopup),
 
-//commit: wl.Listener(*wlr.Surface) = wl.Listener(*wlr.Surface).init(handleCommit),
+commit: wl.Listener(*wlr.Surface) = wl.Listener(*wlr.Surface).init(handleCommit),
 
 pub fn create(xdg_popup: *wlr.XdgPopup, parent: ParentSurface) ?*Self {
     const self: *Self = allocator.create(Self) catch {
@@ -91,4 +93,62 @@ pub fn create(xdg_popup: *wlr.XdgPopup, parent: ParentSurface) ?*Self {
     }
     xdg_popup.unconstrainFromBox(&self.output_box);
     return self;
+}
+
+pub fn destroy(self: *Self) void {
+    self.surface_destroy.link.remove();
+    self.map.link.remove();
+    self.unmap.link.remove();
+    self.new_popup.link.remove();
+    self.new_popup.link.remove();
+
+    if (self.mapped) self.commit.link.remove();
+
+    self.destroyPopups();
+    allocator.destroy(self);
+}
+
+pub fn destroyPopups(self: *Self) void {
+    for (self.popups.items) |popup| {
+        popup.wlr_xdg_popup.destroy();
+        allocator.destroy(popup);
+    }
+    self.popups.deinit(allocator);
+}
+
+fn handleMap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+    const self = @fieldParentPtr(Self, "map", listener);
+    log.debug("Signal: wlr_xdg_popup_map", .{});
+
+    self.wlr_xdg_popup.base.surface.events.commit.add(&self.commit);
+    self.mapped = true;
+}
+
+fn handleCommit(_: *wl.Listener(*wlr.Surface), _: *wlr.Surface) void {
+    log.debug("Signal: wlr_xdg_popup_commit", .{});
+}
+
+fn handleUnmap(_: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+    log.debug("Signal: wlr_xdg_popup_unmap", .{});
+}
+
+fn handleNewPopup(listener: *wl.Listener(*wlr.XdgPopup), wlr_xdg_popup: *wlr.XdgPopup) void {
+    const self = @fieldParentPtr(Self, "new_popup", listener);
+    log.debug("Signal: wlr_xdg_popup_new_popup", .{});
+
+    if (Self.create(wlr_xdg_popup, self.parent)) |popup| {
+        self.popups.append(allocator, popup) catch {
+            log.err("Failed to allocate memory", .{});
+            return;
+        };
+    } else {
+        log.err("Failed to create new_popup", .{});
+    }
+}
+
+fn handleDestroy(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+    const self = @fieldParentPtr(Self, "surface_destroy", listener);
+    log.debug("Signal: wlr_xdg_popup_destroy", .{});
+
+    self.destroy();
 }
