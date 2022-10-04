@@ -1,8 +1,26 @@
 {
-    ".*.zig": ["make"],
-    ".*.c": ["make"],
-    ".*.rs": ["cargo clippy"],
-    "sniff_ignore_dir": ["zig-out", "zig-cache", ".git", "target"],
-    "sniff_ignore_file": [],
-    "sniff_cooldown": 650
+  "zig": [
+    "make"
+  ],
+  "c": {
+    "commands": [
+      "make"
+    ],
+    "relative_dir": "./nextctl"
+  },
+  "rs": {
+    "commands": [
+      "cargo clippy",
+      "cargo build --release"
+    ],
+    "relative_dir": "./nextctl-rs"
+  },
+  "sniff_ignore_dir": [
+    "zig-out",
+    "zig-cache",
+    ".git",
+    "target"
+  ],
+  "sniff_ignore_file": [],
+  "sniff_cooldown": 650
 }
