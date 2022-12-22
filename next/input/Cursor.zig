@@ -23,6 +23,10 @@ wlr_input_device: *wlr.InputDevice,
 pointer_destroy: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(pointerDestroy),
 request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor) = wl.Listener(*wlr.Seat.event.RequestSetCursor).init(requestSetCursor),
 
+axis: wl.Listener(*wlr.Pointer.event.Axis) = wl.Listener(*wlr.Pointer.event.Axis).init(handleAxis),
+button: wl.Listener(*wlr.Pointer.event.Button) = wl.Listener(*wlr.Pointer.event.Button).init(handleButton),
+frame: wl.Listener(*wlr.Cursor) = wl.Listener(*wlr.Cursor).init(handleFrame),
+
 pub fn init(self: *Self, device: *wlr.InputDevice) void {
     log.debug("Initializing pointer device", .{});
     self.* = .{
@@ -36,6 +40,9 @@ pub fn init(self: *Self, device: *wlr.InputDevice) void {
 
     self.wlr_input_device.events.destroy.add(&self.pointer_destroy);
     self.server.seat.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
+    self.server.wlr_cursor.events.axis.add(&self.axis);
+    self.server.wlr_cursor.events.button.add(&self.button);
+    self.server.wlr_cursor.events.frame.add(&self.frame);
 }
 
 fn pointerDestroy(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
@@ -57,4 +64,32 @@ pub fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor)
     } else {
         log.debug("Non-focused toplevel attempted to set the cursor surface. Request denied", .{});
     }
+}
+
+// NOTE: Do we need anything else here?
+pub fn handleAxis(listener: *wl.Listener(*wlr.Pointer.event.Axis), event: *wlr.Pointer.event.Axis) void {
+    const self = @fieldParentPtr(Self, "axis", listener);
+    log.debug("Signal: wlr_pointer_axis", .{});
+
+    self.server.seat.wlr_seat.pointerNotifyAxis(
+        event.time_msec,
+        event.orientation,
+        event.delta,
+        event.delta_discrete,
+        event.source,
+    );
+}
+
+// TODO: Handle custom button bindings.
+pub fn handleButton(listener: *wl.Listener(*wlr.Pointer.event.Button), event: *wlr.Pointer.event.Button) void {
+    const self = @fieldParentPtr(Self, "button", listener);
+    log.debug("Signal: wlr_pointer_button", .{});
+
+    _ = self.server.seat.wlr_seat.pointerNotifyButton(event.time_msec, event.button, event.state);
+}
+
+pub fn handleFrame(listener: *wl.Listener(*wlr.Cursor), _: *wlr.Cursor) void {
+    const self = @fieldParentPtr(Self, "frame", listener);
+    log.debug("Signal: wlr_cursor_frame", .{});
+    self.server.seat.wlr_seat.pointerNotifyFrame();
 }
