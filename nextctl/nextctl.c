@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (state.next_control == NULL) {
-		fputs("ERROR: Compositor doesn't implement next_control_v1.\n", stderr);
+		fputs("ERROR: Compositor doesn't implement NextControlV1.\n", stderr);
 		return EXIT_FAILURE;
 	}
 
