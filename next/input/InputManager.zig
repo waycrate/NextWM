@@ -78,9 +78,13 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
 
 /// Make sure to use this function after making all changes to &server.cursors and &server.keyboards array-lists.
 pub fn setSeatCapabilities(self: *Self) void {
+    const has_keyboard = (self.server.keyboards.items.len > 0);
+    const has_pointer = (self.server.cursors.items.len > 0);
+
+    log.debug("Setting seat capabilities: Pointer->{s} Keyboard->{s}", .{ has_pointer, has_keyboard });
     self.server.seat.wlr_seat.setCapabilities(.{
-        .pointer = (self.server.cursors.items.len > 0),
-        .keyboard = (self.server.keyboards.items.len > 0),
+        .pointer = has_pointer,
+        .keyboard = has_keyboard,
     });
 }
 
