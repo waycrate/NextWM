@@ -93,15 +93,12 @@ fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), ev
     self.server.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
 }
 
+/// Make sure to use this function after making all changes to &server.cursors and &server.keyboards array-lists.
 pub fn setSeatCapabilities(self: *Self) void {
-    log.debug("Setting seat capabilities", .{});
-    if (self.server.keyboards.items.len > 0) {
-        self.server.seat.wlr_seat.setCapabilities(.{
-            //TODO: Don't always assume we have a pointer, check this.
-            .pointer = true,
-            .keyboard = true,
-        });
-    }
+    self.server.seat.wlr_seat.setCapabilities(.{
+        .pointer = (self.server.cursors.items.len > 0),
+        .keyboard = (self.server.keyboards.items.len > 0),
+    });
 }
 
 pub fn hideCursor(self: *Self) void {
