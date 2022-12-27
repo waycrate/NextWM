@@ -1,7 +1,7 @@
 WAYLAND_SCANNER = $(shell pkg-config --variable=wayland_scanner wayland-scanner)
 
 CFLAGS += -Wall -Werror -Wextra -Wpedantic -Wno-unused-parameter -Wconversion -Wformat-security -Wformat -Wsign-conversion -Wfloat-conversion
-CFLAGS += -Wunused-result -fsanitize=leak -std=c18
+CFLAGS += -Wunused-result -std=c18
 
 OBJ = nextctl.o next-control-v1.o
 GEN = next-control-v1.c next-control-v1.h
