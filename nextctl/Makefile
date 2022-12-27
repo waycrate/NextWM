@@ -1,4 +1,5 @@
 WAYLAND_SCANNER = $(shell pkg-config --variable=wayland_scanner wayland-scanner)
+CC = zig cc
 
 CFLAGS += -Wall -Werror -Wextra -Wpedantic -Wno-unused-parameter -Wconversion -Wformat-security -Wformat -Wsign-conversion -Wfloat-conversion
 CFLAGS += -Wunused-result -std=c18
@@ -12,8 +13,6 @@ CFLAGS += $(foreach p,$(PKGS),$(shell pkg-config --cflags $(p)))
 LDLIBS += $(foreach p,$(PKGS),$(shell pkg-config --libs $(p)))
 
 nextctl: $(OBJ)
-	clang-format -i nextctl.c
-	clang-format -i nextctl.h
 	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(CFLAGS) $(LDLIBS)
 
 $(OBJ): $(GEN)
