@@ -20,36 +20,46 @@ const Server = @import("../Server.zig");
 server: *Server,
 
 wlr_input_device: *wlr.InputDevice,
-pointer_destroy: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(pointerDestroy),
-request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor) = wl.Listener(*wlr.Seat.event.RequestSetCursor).init(requestSetCursor),
 
 axis: wl.Listener(*wlr.Pointer.event.Axis) = wl.Listener(*wlr.Pointer.event.Axis).init(handleAxis),
 button: wl.Listener(*wlr.Pointer.event.Button) = wl.Listener(*wlr.Pointer.event.Button).init(handleButton),
 frame: wl.Listener(*wlr.Cursor) = wl.Listener(*wlr.Cursor).init(handleFrame),
+motion: wl.Listener(*wlr.Pointer.event.Motion) = wl.Listener(*wlr.Pointer.event.Motion).init(handleMotion),
+motion_absolute: wl.Listener(*wlr.Pointer.event.MotionAbsolute) = wl.Listener(*wlr.Pointer.event.MotionAbsolute).init(handleMotionAbsolute),
+
+pointer_destroy: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(pointerDestroy),
 
 pub fn init(self: *Self, device: *wlr.InputDevice) void {
     log.debug("Initializing pointer device", .{});
+
     self.* = .{
         .server = server,
         .wlr_input_device = device,
     };
+
+    // These listeners only need to be registered once against the wlr_cursor.
+    if (self.server.cursors.items.len == 0) {
+        self.server.wlr_cursor.events.axis.add(&self.axis);
+        self.server.wlr_cursor.events.button.add(&self.button);
+        self.server.wlr_cursor.events.frame.add(&self.frame);
+        self.server.wlr_cursor.events.motion.add(&self.motion);
+        self.server.wlr_cursor.events.motion_absolute.add(&self.motion_absolute);
+    }
+
     self.server.cursors.append(allocator, self) catch {
         log.err("Failed to allocate memory", .{});
         return;
     };
+    //TODO: We should modify the pointer libinput object here to support features such as tap to click.
+
+    self.server.wlr_cursor.attachInputDevice(self.wlr_input_device);
 
     self.wlr_input_device.events.destroy.add(&self.pointer_destroy);
-    self.server.seat.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
-    self.server.wlr_cursor.events.axis.add(&self.axis);
-    self.server.wlr_cursor.events.button.add(&self.button);
-    self.server.wlr_cursor.events.frame.add(&self.frame);
 }
 
 fn pointerDestroy(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
     const self = @fieldParentPtr(Self, "pointer_destroy", listener);
     log.debug("Signal: wlr_input_device_destroy (pointer)", .{});
-    self.server.wlr_cursor.detachInputDevice(input_device);
-}
 
     if (std.mem.indexOfScalar(*Self, self.server.cursors.items, self)) |i| {
         const cursor = self.server.cursors.orderedRemove(i);
@@ -86,4 +96,13 @@ pub fn handleFrame(listener: *wl.Listener(*wlr.Cursor), _: *wlr.Cursor) void {
     const self = @fieldParentPtr(Self, "frame", listener);
     log.debug("Signal: wlr_cursor_frame", .{});
     self.server.seat.wlr_seat.pointerNotifyFrame();
+}
+
+//TODO: Finish these!
+pub fn handleMotion(_: *wl.Listener(*wlr.Pointer.event.Motion), _: *wlr.Pointer.event.Motion) void {
+    log.debug("Signal: wlr_cursor_motion", .{});
+}
+
+pub fn handleMotionAbsolute(_: *wl.Listener(*wlr.Pointer.event.MotionAbsolute), _: *wlr.Pointer.event.MotionAbsolute) void {
+    log.debug("Signal: wlr_cursor_motion_absolute", .{});
 }

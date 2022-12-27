@@ -30,9 +30,6 @@ wlr_virtual_keyboard_manager: *wlr.VirtualKeyboardManagerV1,
 
 new_input: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(newInput),
 
-request_set_selection: wl.Listener(*wlr.Seat.event.RequestSetSelection) = wl.Listener(*wlr.Seat.event.RequestSetSelection).init(requestSetSelection),
-request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor) = wl.Listener(*wlr.Seat.event.RequestSetCursor).init(requestSetCursor),
-
 pub fn init(self: *Self) !void {
     self.* = .{
         .server = server,
@@ -44,9 +41,7 @@ pub fn init(self: *Self) !void {
         .wlr_virtual_keyboard_manager = try wlr.VirtualKeyboardManagerV1.create(server.wl_server),
     };
 
-    server.wlr_backend.events.new_input.add(&self.new_input);
-    server.seat.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
-    server.seat.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
+    self.server.wlr_backend.events.new_input.add(&self.new_input);
 }
 
 fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
@@ -79,18 +74,6 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
     }
 
     self.setSeatCapabilities();
-}
-
-fn requestSetSelection(listener: *wl.Listener(*wlr.Seat.event.RequestSetSelection), event: *wlr.Seat.event.RequestSetSelection) void {
-    const self = @fieldParentPtr(Self, "request_set_selection", listener);
-    log.debug("Signal: wlr_seat_request_set_selection", .{});
-    self.server.seat.wlr_seat.setSelection(event.source, event.serial);
-}
-
-fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
-    const self = @fieldParentPtr(Self, "request_set_cursor", listener);
-    log.debug("Signal: wlr_seat_request_set_cursor", .{});
-    self.server.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
 }
 
 /// Make sure to use this function after making all changes to &server.cursors and &server.keyboards array-lists.

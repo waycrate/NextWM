@@ -41,11 +41,15 @@ request_set_selection: wl.Listener(*wlr.Seat.event.RequestSetSelection) = wl.Lis
 request_set_primary_selection: wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection) = wl.Listener(*wlr.Seat.event.RequestSetPrimarySelection).init(requestSetPrimarySelection),
 request_start_drag: wl.Listener(*wlr.Seat.event.RequestStartDrag) = wl.Listener(*wlr.Seat.event.RequestStartDrag).init(requestStartDrag),
 
+request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor) = wl.Listener(*wlr.Seat.event.RequestSetCursor).init(requestSetCursor),
+
 pub fn init(self: *Self) !void {
     const seat = try wlr.Seat.create(server.wl_server, default_seat_name);
     self.* = .{ .wlr_seat = seat };
-    self.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
+
+    self.wlr_seat.events.request_set_cursor.add(&self.request_set_cursor);
     self.wlr_seat.events.request_set_primary_selection.add(&self.request_set_primary_selection);
+    self.wlr_seat.events.request_set_selection.add(&self.request_set_selection);
 }
 
 pub fn deinit(self: *Self) void {
@@ -115,5 +119,20 @@ pub fn focusOutput(self: *Self, output: *Output) void {
                 log.err("Failed to warp cursor on output change", .{});
             }
         }
+    }
+}
+
+// Callback that gets triggered when a client wants to set the cursor image.
+pub fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
+    const self = @fieldParentPtr(Self, "request_set_cursor", listener);
+    log.debug("Signal: wlr_seat_request_set_cursor", .{});
+
+    // Check if the client request to set the cursor is the currently focused surface.
+    const focused_client = self.server.seat.wlr_seat.pointer_state.focused_client;
+    if (focused_client == event.seat_client) {
+        log.debug("Focused toplevel set the cursor surface", .{});
+        self.server.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
+    } else {
+        log.debug("Non-focused toplevel attempted to set the cursor surface. Request denied", .{});
     }
 }
