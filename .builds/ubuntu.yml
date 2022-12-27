@@ -2,7 +2,6 @@ image: ubuntu/jammy
 packages:
     - cargo
     - rustfmt
-    - clang
     - clang-format
     - git
     - libwayland-dev
