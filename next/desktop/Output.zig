@@ -102,7 +102,8 @@ fn handleDestroy(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) v
 
     // Find index of self from outputs and remove it.
     if (std.mem.indexOfScalar(*Self, self.server.outputs.items, self)) |i| {
-        _ = self.server.outputs.orderedRemove(i);
+        const output = self.server.outputs.orderedRemove(i);
+        allocator.destroy(output);
     }
     //TODO: Move closed monitors clients to focused one.
 }

@@ -87,10 +87,11 @@ fn handleDestroy(listener: *wl.Listener(*wlr.InputDevice), _: *wlr.InputDevice) 
     log.debug("Signal: wlr_input_device_destroy (keyboard)", .{});
 
     if (std.mem.indexOfScalar(*Self, self.server.keyboards.items, self)) |i| {
-        _ = self.server.keyboards.orderedRemove(i);
+        const keyboard = self.server.keyboards.orderedRemove(i);
+        allocator.destroy(keyboard);
     }
 
-    self.server.input_manager.setSeatCapabilities();
+    server.input_manager.setSeatCapabilities();
 }
 
 fn handleCompositorBindings(keysym: xkb.Keysym) bool {

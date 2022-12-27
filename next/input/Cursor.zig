@@ -51,19 +51,13 @@ fn pointerDestroy(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.I
     self.server.wlr_cursor.detachInputDevice(input_device);
 }
 
-// Callback that gets triggered when a client wants to set the cursor image.
-pub fn requestSetCursor(listener: *wl.Listener(*wlr.Seat.event.RequestSetCursor), event: *wlr.Seat.event.RequestSetCursor) void {
-    const self = @fieldParentPtr(Self, "request_set_cursor", listener);
-    log.debug("Signal: wlr_seat_request_set_cursor", .{});
-
-    // Check if the client request to set the cursor is the currently focused surface.
-    const focused_client = self.server.seat.wlr_seat.pointer_state.focused_client;
-    if (focused_client == event.seat_client) {
-        log.debug("Focused toplevel set the cursor surface", .{});
-        self.server.wlr_cursor.setSurface(event.surface, event.hotspot_x, event.hotspot_y);
-    } else {
-        log.debug("Non-focused toplevel attempted to set the cursor surface. Request denied", .{});
+    if (std.mem.indexOfScalar(*Self, self.server.cursors.items, self)) |i| {
+        const cursor = self.server.cursors.orderedRemove(i);
+        allocator.destroy(cursor);
     }
+
+    server.input_manager.setSeatCapabilities();
+    server.wlr_cursor.detachInputDevice(input_device);
 }
 
 // NOTE: Do we need anything else here?
