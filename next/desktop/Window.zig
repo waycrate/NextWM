@@ -86,6 +86,7 @@ pub fn setMon(self: *Self, output: *Output) void {
 }
 
 // Called by backend specific implementation on destroy event.
+/// Free window and toplevel on destroy.
 pub fn handleDestroy(self: *Self) void {
     switch (self.backend) {
         .xdg_toplevel => |*xdg_toplevel| {
@@ -98,13 +99,18 @@ pub fn handleDestroy(self: *Self) void {
     }
     if (std.mem.indexOfScalar(*Self, self.server.mapped_windows.items, self)) |i| {
         log.warn("Window destroyed before unmap event.", .{});
+        self.wlr_foreign_toplevel_handle.destroy();
+
         const window = self.server.mapped_windows.orderedRemove(i);
         allocator.destroy(window);
+        allocator.destroy(self);
     } else {
         if (std.mem.indexOfScalar(*Self, server.pending_windows.items, self)) |i| {
+            self.wlr_foreign_toplevel_handle.destroy();
+
             const window = self.server.pending_windows.orderedRemove(i);
             allocator.destroy(window);
+            allocator.destroy(self);
         }
     }
-    self.wlr_foreign_toplevel_handle.destroy();
 }

@@ -140,8 +140,7 @@ pub fn handleUnmap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) 
     log.debug("Signal: wlr_xdg_surface_unmap", .{});
 
     if (std.mem.indexOfScalar(*Window, server.mapped_windows.items, self.window)) |i| {
-        const toplevel = server.mapped_windows.orderedRemove(i);
-        allocator.destroy(toplevel);
+        _ = server.mapped_windows.orderedRemove(i);
     }
     if (server.seat.wlr_seat.keyboard_state.focused_surface) |focused_surface| {
         if (focused_surface == self.xdg_surface.surface) {
