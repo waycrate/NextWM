@@ -11,6 +11,7 @@ install:
 check:
 	zig fmt --check next/
 	zig fmt --check build.zig
+	zig fmt --check nextctl.zig
 	$(MAKE) -C ./nextctl -s $@
 	cd ./nextctl-rs; cargo check
 	cd ./nextctl-rs; cargo fmt -- --check
