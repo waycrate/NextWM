@@ -9,6 +9,5 @@ indent_size = 4
 [*.xml]
 indent_size = 2
 
-[*.scd]
+[Makefile]
 indent_style = tab
-indent_size = 4
