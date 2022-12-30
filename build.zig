@@ -90,6 +90,13 @@ pub fn build(builder: *std.build.Builder) !void {
     // Add the required packages and link it to our project.
     exe.linkLibC();
 
+    // Flag parsing library.
+    const clap = std.build.Pkg{
+        .name = "clap",
+        .path = .{ .path = "deps/zig-clap/clap.zig" },
+    };
+    exe.addPackage(clap);
+
     const wayland = std.build.Pkg{
         .name = "wayland",
         .path = .{ .generated = &scanner.result },

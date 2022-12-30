@@ -8,7 +8,7 @@
 const allocator = @import("./utils/allocator.zig").allocator;
 const build_options = @import("build_options");
 const c = @import("./utils/c.zig");
-const flags = @import("./utils/flags.zig");
+const clap = @import("clap");
 const fs = std.fs;
 const io = std.io;
 const mem = std.mem;
@@ -20,6 +20,8 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Server = @import("Server.zig");
+const stderr = io.getStdErr().writer();
+const stdout = io.getStdOut().writer();
 
 // Server is a public global as we import it in some other files.
 pub var server: Server = undefined;
@@ -28,53 +30,39 @@ pub var server: Server = undefined;
 pub const log_level: std.log.Level = .debug;
 pub var runtime_log_level: std.log.Level = .err;
 
-// Usage text.
-const usage: []const u8 =
-    \\Usage: next [options]
-    \\
-    \\  -h, --help                  Print this help message and exit.
-    \\  -v, --version               Print the version number and exit.
-    \\  -c <command>                Run `sh -c <command>` on startup.
-    \\  -d                          Set log level to debug mode.
-    \\  -l <level>                  Set the log level:
-    \\                                  error, warning, info, or debug.
-    \\
-;
-
 pub fn main() anyerror!void {
-    //NOTE: https://github.com/ziglang/zig/issues/7807
-    const argv: [][*:0]const u8 = os.argv;
-    const result = flags.parse(argv[1..], &[_]flags.Flag{
-        .{ .name = "--help", .kind = .boolean },
-        .{ .name = "--version", .kind = .boolean },
-        .{ .name = "-c", .kind = .arg },
-        .{ .name = "-d", .kind = .boolean },
-        .{ .name = "-h", .kind = .boolean },
-        .{ .name = "-l", .kind = .arg },
-        .{ .name = "-v", .kind = .boolean },
-    }) catch {
-        try io.getStdErr().writeAll(usage);
-        return;
+    const params = comptime [_]clap.Param(clap.Help){
+        clap.parseParam("-h, --help             Print this help message and exit.           ") catch unreachable,
+        clap.parseParam("-v, --version          Print the version number and exit.          ") catch unreachable,
+        clap.parseParam("-c, --command <STR>    Run `sh -c <STR>` on startup.               ") catch unreachable,
+        clap.parseParam("-d, --debug            Set log level to debug mode.                ") catch unreachable,
+        clap.parseParam("-l, --level <STR>      Set the log level: error, warnings, or info.") catch unreachable,
     };
 
-    // Print help message if requested.
-    if (result.boolFlag("-h") or result.boolFlag("--help")) {
-        try io.getStdOut().writeAll(usage);
+    var args = clap.parse(clap.Help, &params, .{}) catch |err| {
+        try stderr.print("Failed to parse arguments: {s}\n", .{@errorName(err)});
         return;
+    };
+    defer args.deinit();
+
+    // Print help message if requested.
+    if (args.flag("--help")) {
+        try stderr.writeAll("Usage: next [options]\n");
+        return clap.help(stderr, &params);
     }
 
     // Print version information if requested.
-    if (result.boolFlag("-v") or result.boolFlag("--version")) {
-        try io.getStdOut().writeAll("Next version: " ++ build_options.version ++ "\n");
+    if (args.flag("--version")) {
+        try stdout.print("Next version: {s}\n", .{build_options.version});
         return;
     }
 
-    if (result.boolFlag("-d")) {
+    if (args.flag("--debug")) {
         runtime_log_level = .debug;
     }
 
-    // Fetch the log level specified or fallback to info.
-    if (result.argFlag("-l")) |level| {
+    //Fetch the log level specified or fallback to info.
+    if (args.option("--level")) |level| {
         if (mem.eql(u8, level, std.log.Level.err.asText())) {
             runtime_log_level = .err;
         } else if (mem.eql(u8, level, std.log.Level.warn.asText())) {
@@ -85,7 +73,6 @@ pub fn main() anyerror!void {
             runtime_log_level = .debug;
         } else {
             std.log.err("Invalid log level '{s}'", .{level});
-            try io.getStdErr().writeAll(usage);
             return;
         }
     }
@@ -93,7 +80,7 @@ pub fn main() anyerror!void {
     // Fetching the startup command.
     const startup_command = blk: {
         // If command flag is mentioned, use it.
-        if (result.argFlag("-c")) |command| {
+        if (args.option("--command")) |command| {
             break :blk try allocator.dupeZ(u8, command);
         } else {
             // Try to resolve xdg_config_home or home respectively and use their path's if possible.
@@ -217,7 +204,6 @@ pub fn log(
     const level_txt = comptime toUpper(level.asText());
     const scope_txt = "[" ++ @tagName(scope) ++ "] ";
 
-    const stderr = io.getStdErr().writer();
     stderr.print(scope_txt ++ "(" ++ level_txt ++ ") " ++ format ++ "\n", args) catch {};
 }
 

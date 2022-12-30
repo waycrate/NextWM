@@ -13,3 +13,6 @@
 [submodule "deps/zig-wlroots"]
 	path = deps/zig-wlroots
 	url = https://github.com/swaywm/zig-wlroots.git
+[submodule "deps/zig-clap"]
+	path = deps/zig-clap
+	url = https://github.com/Hejsil/zig-clap
