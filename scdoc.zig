@@ -5,7 +5,6 @@
 // Created by:	Aakash Sen Sharma, September 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
-const Self = @This();
 const std = @import("std");
 const allocator = @import("build.zig").allocator;
 
@@ -15,6 +14,8 @@ pub fn build(builder: *std.build.Builder, docs_dir: []const u8) !void {
         .iterate = true,
     });
     defer dir.close();
+
+    //TODO: https://github.com/ziglang/zig/blob/master/lib/std/compress/gzip.zig Gzip the man-pages properly
 
     var iterator = dir.iterate();
     while (try iterator.next()) |entry| {

@@ -5,8 +5,8 @@
 // Created by:	Aakash Sen Sharma, September 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
-const std = @import("std");
 const Self = @This();
+const std = @import("std");
 const allocator = @import("build.zig").allocator;
 
 pub const BuildType = enum {
