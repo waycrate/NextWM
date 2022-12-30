@@ -32,18 +32,20 @@ NOTE: By default Nextctl C codebase is compiled and put in the mentioned `--pref
 
 ### Depedencies
 
-1. `cargo` (Optional. Required if you build Rust implementation of Nextctl)
+1. `cargo` (Optional. Required if you build Rust implementation of Nextctl) *
 1. `libevdev`
 1. `libinput`
-1. `make` (You can run `zig build -Dxwayland-lazy` instead. Makefile has been bundled for convenience.)
+1. `make` *
 1. `pixman`
-1. `pkg-config`
-1. `scdoc` (Optional. If scdoc binary is not found, man pages are not generated.)
-1. `wayland-protocols`
+1. `pkg-config` *
+1. `scdoc` (Optional. If scdoc binary is not found, man pages are not generated.) *
+1. `wayland-protocols` *
 1. `wayland`
 1. `wlroots` 0.15
 1. `xkbcommon`
-1. `zig` 0.9.1
+1. `zig` 0.9.1 *
+
+_\* Compile-time dependencies_
 
 ## Steps
 
