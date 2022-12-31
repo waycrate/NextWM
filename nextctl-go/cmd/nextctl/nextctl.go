@@ -41,7 +41,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, usage)
 			os.Exit(0)
 		} else if arg == "-v" || arg == "--version" {
-			fmt.Fprintln(os.Stderr, os.Stderr, "Nextctl version: ", VERSION)
+			fmt.Fprintln(os.Stderr, "Nextctl version: ", VERSION)
 			os.Exit(0)
 		}
 	}

@@ -1,6 +1,6 @@
 module git.sr.ht/~shinyzenith/nextctl
 
-go 1.19
+go 1.18
 
 require github.com/rajveermalviya/go-wayland/wayland v0.0.0-20221011124432-87abca507f9b
 

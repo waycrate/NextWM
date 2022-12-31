@@ -5,6 +5,7 @@ packages:
     - clang-format
     - git
     - libwayland-dev
+    - golang
     - libwlroots-dev
     - make
     - pkgconf
@@ -22,14 +23,20 @@ tasks:
           sudo mv ./zig-linux-x86_64-$ZIG_VERSION/zig /usr/bin
           sudo mv ./zig-linux-x86_64-$ZIG_VERSION/lib /usr/lib/zig
 
+    - install_go_wayland_scanner: |
+          git clone https://github.com/rajveermalviya/go-wayland
+          cd go-wayland
+          go build ./cmd/go-wayland-scanner/
+          sudo mv ./go-wayland-scanner /usr/bin
+
     - build: |
-          cd NextWM
-          make
+          make -C NextWM
 
     - build-rs: |
-          cd NextWM
-          zig build -Dnextctl-rs
+          make -C NextWM/nextctl-rs
+
+    - build-go: |
+          make -C NextWM/nextctl-go
 
     - fmt: |
-          cd NextWM
-          make check
+          make check -C NextWM

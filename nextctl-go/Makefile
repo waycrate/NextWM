@@ -1,12 +1,13 @@
 BINARY:=nextctl
 GO_WAYLAND_SCANNER:=go-wayland-scanner
 FMT_REQUIRED:=$(shell gofmt -l $(shell find . -type f -iname *.go))
+BUILD_FLAGS:=-ldflags "-s -w"
 
 all: build
 
 build: protocols
 	go mod tidy
-	go build -ldflags "-s -w" ./cmd/$(BINARY)/
+	go build $(BUILD_FLAGS) ./cmd/$(BINARY)/
 
 protocols:
 	mkdir -p pkg/next_control

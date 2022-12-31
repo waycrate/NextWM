@@ -32,7 +32,7 @@ By default Nextctl C codebase is compiled and put in the mentioned `--prefix`. T
 
 1. `cargo` (Optional. Required if you build Rust implementation of Nextctl) *
 1. `go-wayland-scanner` ([Optional](https://github.com/rajveermalviya/go-wayland). required if you build Go implementation of Nextctl) *
-1. `go` (Optional. Required if you build Go implementation of Nextctl) *
+1. `go` 1.18 (Optional. Required if you build Go implementation of Nextctl) *
 1. `libevdev`
 1. `libinput`
 1. `make` *
