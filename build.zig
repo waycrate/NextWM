@@ -41,7 +41,7 @@ pub fn build(builder: *std.build.Builder) !void {
     scanner.generate("next_control_v1", 1);
 
     // Version information.
-    const version = "0.1.0";
+    const version = "0.1.0-dev";
 
     // Xwayland Lazy.
     const xwayland_lazy = builder.option(bool, "xwayland-lazy", "Set to true to enable XwaylandLazy initialization") orelse false;

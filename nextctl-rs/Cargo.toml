@@ -1,7 +1,7 @@
 [package]
 description = "Command line tool to control NextWM"
 name = "nextctl-rs"
-version = "0.1.0"
+version = "0.1.0-dev"
 edition = "2021"
 authors = [ "Shinyzenith <aakashsensharma@gmail.com>", ]
 
