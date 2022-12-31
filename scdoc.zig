@@ -34,7 +34,7 @@ pub fn build(builder: *std.build.Builder, docs_dir: []const u8) !void {
                     const output = try std.fmt.allocPrint(
                         allocator,
                         "share/man/man{s}/{s}",
-                        .{ section, path },
+                        .{ section, std.fs.path.basename(path) },
                     );
                     defer allocator.free(output);
 
