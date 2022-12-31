@@ -11,6 +11,7 @@ const allocator = @import("build.zig").allocator;
 
 pub const BuildType = enum {
     c,
+    go,
     rust,
 };
 
@@ -39,7 +40,11 @@ fn make(step: *std.build.Step) !void {
         },
         .rust => {
             try syncVersion("version = ", "nextctl-rs/Cargo.toml", self.version);
-            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "cd nextctl-rs; cargo build --release" });
+            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "make -C ./nextctl-rs" });
+        },
+        .go => {
+            try syncVersion("const VERSION = ", "nextctl-go/cmd/nextctl/nextctl.go", self.version);
+            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "make -C ./nextctl-go" });
         },
     }
 }
@@ -52,6 +57,9 @@ pub fn install(self: *Self) !void {
         },
         .rust => {
             self.builder.installFile("./nextctl-rs/target/release/nextctl", "bin/nextctl");
+        },
+        .go => {
+            self.builder.installFile("./nextctl-go/nextctl", "bin/nextctl");
         },
     }
 }

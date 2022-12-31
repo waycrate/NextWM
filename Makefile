@@ -12,20 +12,25 @@ check:
 	zig fmt --check next/
 	zig fmt --check *.zig
 	$(MAKE) -C ./nextctl -s $@
-	cd ./nextctl-rs; cargo check
-	cd ./nextctl-rs; cargo fmt -- --check
+	$(MAKE) -C ./nextctl-rs -s $@
+	$(MAKE) -C ./nextctl-go -s $@
 
 uninstall:
 	$(RM) $(PREFIX)/bin/next
 	$(RM) $(PREFIX)/bin/nextctl
-	$(RM) $(PREFIX)/share/man/man1/next.1
-	$(RM) $(PREFIX)/share/man/man1/nextctl.1
+	$(RM) $(PREFIX)/share/man/man1/next.1.gz
+	$(RM) $(PREFIX)/share/man/man1/nextctl.1.gz
 	$(RM) $(PREFIX)/share/wayland-sessions/next.desktop
+	$(RM) $(PREFIX)/share/next-protocols/next-control-v1.xml
+	$(RM) $(PREFIX)/share/pkgconfig/next-protocols.pc
 
 clean:
-	$(RM) -r zig-cache zig-out
 	$(MAKE) -C ./nextctl -s $@
+	$(MAKE) -C ./nextctl-go -s $@
+	$(MAKE) -C ./nextctl-rs -s $@
+	$(RM) -r zig-cache zig-out
 	$(RM) ./docs/*.gz
-	cd ./nextctl-rs/; cargo clean
+	$(RM) *.pc
+
 
 .PHONY: build clean install uninstall check

@@ -49,6 +49,9 @@ pub fn build(builder: *std.build.Builder) !void {
     // Nextctl-rs.
     const nextctl_rs = builder.option(bool, "nextctl-rs", "If enabled, rust version is built, else C.") orelse false;
 
+    // Nextctl-go.
+    const nextctl_go = builder.option(bool, "nextctl-go", "If enabled, go version is built, else C.") orelse false;
+
     // Create build options.
     const options = builder.addOptions();
 
@@ -66,39 +69,6 @@ pub fn build(builder: *std.build.Builder) !void {
     // Setting executable target and build mode.
     exe.setTarget(builder.standardTargetOptions(.{}));
     exe.setBuildMode(builder.standardReleaseOptions());
-
-    // Checking if scdoc exists and accordingly adding man page generation step.
-    if (blk: {
-        _ = builder.findProgram(&[_][]const u8{"scdoc"}, &[_][]const u8{}) catch |err| switch (err) {
-            error.FileNotFound => break :blk false,
-            else => return err,
-        };
-        break :blk true;
-    }) {
-        try ScdocStep.build(builder, "./docs/");
-    }
-
-    // Compiling nextctl and installing it.
-    const nextctl = try NextctlStep.create(builder, if (nextctl_rs) .rust else .c, version);
-    try nextctl.install();
-
-    // Writing pkgconfig file and installing it.
-    const pkgconfig_file = try std.fs.cwd().createFile("next-protocols.pc", .{});
-    defer pkgconfig_file.close();
-
-    try pkgconfig_file.writer().print(
-        \\prefix={s}
-        \\datadir=${{prefix}}/share
-        \\pkgdatadir=${{datadir}}/next-protocols
-        \\
-        \\Name: next-protocols
-        \\URL: https://git.sr.ht/~shinyzenith/nextwm
-        \\Description: protocol files for NextWM
-        \\Version: {s}
-    , .{ builder.install_prefix, version });
-
-    builder.installFile("protocols/next-control-v1.xml", "share/next-protocols/next-control-v1.xml");
-    builder.installFile("next-protocols.pc", "share/pkgconfig/next-protocols.pc");
 
     // Depend on scanner step to execute.
     exe.step.dependOn(&scanner.step);
@@ -158,4 +128,55 @@ pub fn build(builder: *std.build.Builder) !void {
 
     // Install the binary to the mentioned prefix.
     exe.install();
+
+    // Scdoc installation
+    {
+        if (blk: {
+            _ = builder.findProgram(&[_][]const u8{"scdoc"}, &[_][]const u8{}) catch |err| switch (err) {
+                error.FileNotFound => break :blk false,
+                else => return err,
+            };
+            break :blk true;
+        }) {
+            try ScdocStep.build(builder, "./docs/");
+        }
+    }
+
+    // Nextctl Installation
+    {
+        const build_type: NextctlStep.BuildType = blk: {
+            if (nextctl_rs and nextctl_go) {
+                @panic("Please choose only 1 Nextctl Implementation.");
+            } else if (nextctl_rs) {
+                break :blk .rust;
+            } else if (nextctl_go) {
+                break :blk .go;
+            } else {
+                break :blk .c;
+            }
+        };
+
+        const nextctl = try NextctlStep.create(builder, build_type, version);
+        try nextctl.install();
+    }
+
+    // Pkgconfig installation.
+    {
+        const pkgconfig_file = try std.fs.cwd().createFile("next-protocols.pc", .{});
+        defer pkgconfig_file.close();
+
+        try pkgconfig_file.writer().print(
+            \\prefix={s}
+            \\datadir=${{prefix}}/share
+            \\pkgdatadir=${{datadir}}/next-protocols
+            \\
+            \\Name: next-protocols
+            \\URL: https://git.sr.ht/~shinyzenith/nextwm
+            \\Description: protocol files for NextWM
+            \\Version: {s}
+        , .{ builder.install_prefix, version });
+
+        builder.installFile("protocols/next-control-v1.xml", "share/next-protocols/next-control-v1.xml");
+        builder.installFile("next-protocols.pc", "share/pkgconfig/next-protocols.pc");
+    }
 }
