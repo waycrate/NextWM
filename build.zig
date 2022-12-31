@@ -78,8 +78,27 @@ pub fn build(builder: *std.build.Builder) !void {
         try ScdocStep.build(builder, "./docs/");
     }
 
+    // Compiling nextctl and installing it.
     const nextctl = try NextctlStep.create(builder, if (nextctl_rs) .rust else .c, version);
     try nextctl.install();
+
+    // Writing pkgconfig file and installing it.
+    const pkgconfig_file = try std.fs.cwd().createFile("next-protocols.pc", .{});
+    defer pkgconfig_file.close();
+
+    try pkgconfig_file.writer().print(
+        \\prefix={s}
+        \\datadir=${{prefix}}/share
+        \\pkgdatadir=${{datadir}}/next-protocols
+        \\
+        \\Name: next-protocols
+        \\URL: https://git.sr.ht/~shinyzenith/nextwm
+        \\Description: protocol files for NextWM
+        \\Version: {s}
+    , .{ builder.install_prefix, version });
+
+    builder.installFile("protocols/next-control-v1.xml", "share/next-protocols/next-control-v1.xml");
+    builder.installFile("next-protocols.pc", "share/pkgconfig/next-protocols.pc");
 
     // Depend on scanner step to execute.
     exe.step.dependOn(&scanner.step);
