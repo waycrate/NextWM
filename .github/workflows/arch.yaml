@@ -21,14 +21,6 @@ jobs:
               with:
                   submodules: true
 
-            - name: Install go-wayland-scanner
-              run: |
-                  cd /tmp
-                  git clone https://github.com/rajveermalviya/go-wayland/
-                  cd go-wayland
-                  go build ./cmd/go-wayland-scanner
-                  mv ./go-wayland-scanner /usr/bin
-
             - name: Build NextWM
               run: |
                   make

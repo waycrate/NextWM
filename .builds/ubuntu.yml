@@ -23,12 +23,6 @@ tasks:
           sudo mv ./zig-linux-x86_64-$ZIG_VERSION/zig /usr/bin
           sudo mv ./zig-linux-x86_64-$ZIG_VERSION/lib /usr/lib/zig
 
-    - install_go_wayland_scanner: |
-          git clone https://github.com/rajveermalviya/go-wayland
-          cd go-wayland
-          go build ./cmd/go-wayland-scanner/
-          sudo mv ./go-wayland-scanner /usr/bin
-
     - build: |
           make -C NextWM
 

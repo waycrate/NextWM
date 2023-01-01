@@ -35,10 +35,8 @@ Note: All Nextctl implementations are exactly identical.
 ### Depedencies
 
 1. `cargo` (Optional. Required if you build Rust implementation of Nextctl) *
-1. `go-wayland-scanner` ([Optional](https://github.com/rajveermalviya/go-wayland). required if you build Go implementation of Nextctl) *
 1. `go` 1.18 (Optional. Required if you build Go implementation of Nextctl) *
 1. `libevdev`
-1. `xwayland` (Optional. Required if you want Xwayland support.)
 1. `libinput`
 1. `make` *
 1. `pixman`
@@ -48,6 +46,7 @@ Note: All Nextctl implementations are exactly identical.
 1. `wayland`
 1. `wlroots` 0.15
 1. `xkbcommon`
+1. `xwayland` (Optional. Required if you want Xwayland support.)
 1. `zig` 0.9.1 *
 
 _\* Compile-time dependencies_
