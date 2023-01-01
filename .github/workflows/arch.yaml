@@ -33,6 +33,10 @@ jobs:
               run: |
                   make
 
+            - name: Build NextWM-Xwayland
+              run: |
+                  make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy"
+
             - name: Build Nextctl-rs
               run: |
                   make -C ./nextctl-rs

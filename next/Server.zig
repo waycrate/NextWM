@@ -77,8 +77,8 @@ pending_windows: std.ArrayListUnmanaged(*Window),
 wlr_layer_shell: *wlr.LayerShellV1,
 new_layer_surface: wl.Listener(*wlr.LayerSurfaceV1),
 
-wlr_xwayland: *wlr.Xwayland,
-new_xwayland_surface: wl.Listener(*wlr.XwaylandSurface),
+wlr_xwayland: if (build_options.xwayland) *wlr.Xwayland else void,
+new_xwayland_surface: if (build_options.xwayland) wl.Listener(*wlr.XwaylandSurface) else void,
 
 wlr_power_manager: *wlr.OutputPowerManagerV1,
 set_mode: wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode),
@@ -164,8 +164,10 @@ pub fn init(self: *Self) !void {
     self.layer_top = &(try self.wlr_scene.node.createSceneTree()).node;
 
     // Initializing Xwayland.
-    self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, build_options.xwayland_lazy);
-    self.wlr_xwayland.setSeat(self.seat.wlr_seat);
+    if (build_options.xwayland) {
+        self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, build_options.xwayland_lazy);
+        self.wlr_xwayland.setSeat(self.seat.wlr_seat);
+    }
 
     // Initialize wl_shm, linux-dmabuf and other buffer factory protocols.
     try self.wlr_renderer.initServer(self.wl_server);
@@ -211,8 +213,10 @@ pub fn init(self: *Self) !void {
     self.wlr_layer_shell.events.new_surface.add(&self.new_layer_surface);
 
     // Add a callback when a xwayland surface is created.
-    self.new_xwayland_surface.setNotify(newXwaylandSurface);
-    self.wlr_xwayland.events.new_surface.add(&self.new_xwayland_surface);
+    if (build_options.xwayland) {
+        self.new_xwayland_surface.setNotify(newXwaylandSurface);
+        self.wlr_xwayland.events.new_surface.add(&self.new_xwayland_surface);
+    }
 }
 
 // Create the socket, start the backend, and setup the environment
@@ -223,11 +227,14 @@ pub fn start(self: *Self) !void {
 
     // Set the wayland_display environment variable.
     if (c.setenv("WAYLAND_DISPLAY", socket, 1) < 0) return error.SetenvError;
-    if (c.setenv("DISPLAY", self.wlr_xwayland.display_name, 1) < 0) return error.SetenvError;
+    if (build_options.xwayland) if (c.setenv("DISPLAY", self.wlr_xwayland.display_name, 1) < 0) return error.SetenvError;
 
     try self.wlr_backend.start();
     log.info("Starting NextWM on {s}", .{socket});
-    log.info("Xwayland initialized at {s}", .{self.wlr_xwayland.display_name});
+
+    if (build_options.xwayland) {
+        log.info("Xwayland initialized at {s}", .{self.wlr_xwayland.display_name});
+    }
 }
 
 pub fn deinit(self: *Self) void {
@@ -237,7 +244,9 @@ pub fn deinit(self: *Self) void {
     self.sigquit_cb.remove();
     self.sigterm_cb.remove();
 
-    self.wlr_xwayland.destroy();
+    if (build_options.xwayland) {
+        self.wlr_xwayland.destroy();
+    }
     self.wl_server.destroyClients();
 
     self.wlr_backend.destroy();

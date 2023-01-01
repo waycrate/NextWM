@@ -32,6 +32,9 @@ tasks:
     - build: |
           make -C NextWM
 
+    - build-xwayland: |
+          make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy" -C NextWM
+
     - build-rs: |
           make -C NextWM/nextctl-rs
 

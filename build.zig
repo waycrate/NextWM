@@ -43,8 +43,11 @@ pub fn build(builder: *std.build.Builder) !void {
     // Version information.
     const version = "0.1.0-dev";
 
+    // Xwayland
+    const xwayland = builder.option(bool, "xwayland", "Set to true to enable XWayland features.") orelse false;
+
     // Xwayland Lazy.
-    const xwayland_lazy = builder.option(bool, "xwayland-lazy", "Set to true to enable XwaylandLazy initialization") orelse false;
+    const xwayland_lazy = builder.option(bool, "xwayland-lazy", "Set to true to enable XWayland lazy initialization.") orelse false;
 
     // Nextctl-rs.
     const nextctl_rs = builder.option(bool, "nextctl-rs", "If enabled, rust version is built, else C.") orelse false;
@@ -58,7 +61,7 @@ pub fn build(builder: *std.build.Builder) !void {
     // Adding build options which we can access in our source code.
     options.addOption([]const u8, "version", version);
     options.addOption(bool, "xwayland_lazy", xwayland_lazy);
-    options.addOption(bool, "nextctl_rs", nextctl_rs);
+    options.addOption(bool, "xwayland", xwayland);
 
     // Creating the executable.
     const exe = builder.addExecutable("next", "next/next.zig");

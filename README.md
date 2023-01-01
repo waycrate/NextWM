@@ -24,9 +24,13 @@ Since this project is meant to teach others, why not show people how wayland cli
 
 ## Building
 
-By default Xwayland always executes in the background. The `-Dxwayland-lazy` flag was added to mitigate this issue however this may have slightly worse xwayland startup times.
+Note: All Nextctl implementations are exactly identical.
 
-By default Nextctl C codebase is compiled and put in the mentioned `--prefix`. The `-Dnextctl-rs` / `-Dnextctl-go` flag compiles the Go/Rust versions instead. All versions of the tool are exactly identical.
+### Build Flags
+- `-Dxwayland` flag enables Xwayland supoprt.
+- `-Dxwayland-lazy` lazy load Xwayland (might have slightly worse xwayland startup times but reduces resource consumption).
+- `-Dnextctl-rs` Compile the Rust version of Nextctl (Default is C codebase).
+- `-Dnextctl-go` Compile the Go version of Nextctl (Default is C codebase).
 
 ### Depedencies
 
@@ -34,6 +38,7 @@ By default Nextctl C codebase is compiled and put in the mentioned `--prefix`. T
 1. `go-wayland-scanner` ([Optional](https://github.com/rajveermalviya/go-wayland). required if you build Go implementation of Nextctl) *
 1. `go` 1.18 (Optional. Required if you build Go implementation of Nextctl) *
 1. `libevdev`
+1. `xwayland` (Optional. Required if you want Xwayland support.)
 1. `libinput`
 1. `make` *
 1. `pixman`
