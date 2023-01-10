@@ -85,34 +85,34 @@ pub fn build(builder: *std.build.Builder) !void {
     // Flag parsing library.
     const clap = std.build.Pkg{
         .name = "clap",
-        .path = .{ .path = "deps/zig-clap/clap.zig" },
+        .source = .{ .path = "deps/zig-clap/clap.zig" },
     };
     exe.addPackage(clap);
 
     const wayland = std.build.Pkg{
         .name = "wayland",
-        .path = .{ .generated = &scanner.result },
+        .source = .{ .generated = &scanner.result },
     };
     exe.addPackage(wayland);
     exe.linkSystemLibrary("wayland-server");
 
     const pixman = std.build.Pkg{
         .name = "pixman",
-        .path = .{ .path = "deps/zig-pixman/pixman.zig" },
+        .source = .{ .path = "deps/zig-pixman/pixman.zig" },
     };
     exe.addPackage(pixman);
     exe.linkSystemLibrary("pixman-1");
 
     const xkbcommon = std.build.Pkg{
         .name = "xkbcommon",
-        .path = .{ .path = "deps/zig-xkbcommon/src/xkbcommon.zig" },
+        .source = .{ .path = "deps/zig-xkbcommon/src/xkbcommon.zig" },
     };
     exe.addPackage(xkbcommon);
     exe.linkSystemLibrary("xkbcommon");
 
     const wlroots = std.build.Pkg{
         .name = "wlroots",
-        .path = .{ .path = "deps/zig-wlroots/src/wlroots.zig" },
+        .source = .{ .path = "deps/zig-wlroots/src/wlroots.zig" },
         .dependencies = &[_]std.build.Pkg{ wayland, xkbcommon, pixman },
     };
     exe.addPackage(wlroots);

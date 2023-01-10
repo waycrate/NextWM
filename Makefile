@@ -1,6 +1,6 @@
 PREFIX=/usr
 BINDIR=$(PREFIX)/bin
-BUILD_FLAGS = -Dxwayland-lazy
+BUILD_FLAGS = -Drelease-safe
 
 build:
 	zig build $(BUILD_FLAGS)

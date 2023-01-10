@@ -16,7 +16,6 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Window = @import("Window.zig");
-const Server = @import("../Server.zig");
 
 xdg_toplevel_decoration: *wlr.XdgToplevelDecorationV1,
 

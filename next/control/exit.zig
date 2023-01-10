@@ -9,7 +9,7 @@ const server = &@import("../next.zig").server;
 
 const Error = @import("command.zig").Error;
 
-pub fn exit(
+pub fn exitRiver(
     args: []const [:0]const u8,
     _: *?[]const u8,
 ) !void {

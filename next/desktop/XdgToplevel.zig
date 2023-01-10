@@ -15,7 +15,6 @@ const std = @import("std");
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
-const Server = @import("../Server.zig");
 const Window = @import("Window.zig");
 const Output = @import("Output.zig");
 const XdgPopup = @import("XdgPopup.zig");
@@ -29,18 +28,18 @@ popups: std.ArrayListUnmanaged(*XdgPopup) = .{},
 
 geometry: wlr.Box = undefined,
 draw_borders: bool = true,
-scene_node: *wlr.SceneNode = undefined,
-scene_surface: *wlr.SceneNode = undefined,
+scene: *wlr.SceneTree = undefined,
+scene_surface: *wlr.SceneTree = undefined,
 
-map: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleMap),
-unmap: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleUnmap),
-destroy: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(handleDestroy),
-set_app_id: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(setAppId),
+map: wl.Listener(void) = wl.Listener(void).init(handleMap),
+unmap: wl.Listener(void) = wl.Listener(void).init(handleUnmap),
+destroy: wl.Listener(void) = wl.Listener(void).init(handleDestroy),
+set_app_id: wl.Listener(void) = wl.Listener(void).init(setAppId),
 new_popup: wl.Listener(*wlr.XdgPopup) = wl.Listener(*wlr.XdgPopup).init(newPopup),
-set_title: wl.Listener(*wlr.XdgSurface) = wl.Listener(*wlr.XdgSurface).init(setTitle),
+set_title: wl.Listener(void) = wl.Listener(void).init(setTitle),
 
-pub fn init(output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
-    log.debug("New xdg_shell toplevel received: title={s} app_id={s}", .{
+pub fn init(focused_output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
+    log.debug("New xdg_shell toplevel received: title={any} app_id={any}", .{
         xdg_surface.role_data.toplevel.title,
         xdg_surface.role_data.toplevel.app_id,
     });
@@ -51,7 +50,7 @@ pub fn init(output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!vo
     };
     errdefer allocator.destroy(window);
 
-    window.init(output, .{ .xdg_toplevel = .{
+    window.init(focused_output, .{ .xdg_toplevel = .{
         .window = window,
         .xdg_surface = xdg_surface,
     } }) catch {
@@ -72,21 +71,23 @@ pub fn init(output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!vo
     // TODO: Handle existing subsurfaces.
 }
 
-pub fn handleMap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+pub fn handleMap(listener: *wl.Listener(void)) void {
     const self = @fieldParentPtr(Self, "map", listener);
     log.debug("Signal: wlr_xdg_surface_map", .{});
 
     // TODO: Check if view wants to be fullscreen then make it fullscreen.
 
     // Setting some struct fields we will need later
-    self.scene_node = &(server.layer_tile.createSceneTree() catch return).node;
-    self.scene_surface = self.scene_node.createSceneXdgSurface(self.xdg_surface) catch return;
+    self.scene = server.layer_tile.createSceneTree() catch return;
+    self.scene.node.setEnabled(false);
+
+    self.scene_surface = self.scene.createSceneXdgSurface(self.xdg_surface) catch return;
     self.xdg_surface.getGeometry(&self.geometry);
 
     // Looping over 4 times to create the top, bottom, left, and right borders.
     var j: usize = 0;
     while (j <= 4) : (j += 1) {
-        self.borders.append(allocator, self.scene_node.createSceneRect(0, 0, &server.config.border_color) catch return) catch return;
+        self.borders.append(allocator, self.scene.createSceneRect(0, 0, &server.config.border_color) catch return) catch return;
     }
 
     // If the client can have csd then why draw servide side borders?
@@ -135,7 +136,7 @@ pub fn newPopup(listener: *wl.Listener(*wlr.XdgPopup), xdg_popup: *wlr.XdgPopup)
     }
 }
 
-pub fn handleUnmap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+pub fn handleUnmap(listener: *wl.Listener(void)) void {
     const self = @fieldParentPtr(Self, "unmap", listener);
     log.debug("Signal: wlr_xdg_surface_unmap", .{});
 
@@ -154,7 +155,7 @@ pub fn handleUnmap(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) 
     }
 }
 
-pub fn handleDestroy(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+pub fn handleDestroy(listener: *wl.Listener(void)) void {
     const self = @fieldParentPtr(Self, "destroy", listener);
     log.debug("Signal: wlr_xdg_surface_destroy", .{});
 
@@ -184,20 +185,29 @@ pub fn resize(self: *Self, x: c_int, y: c_int, width: c_int, height: c_int) void
         self.borders.items[3].setSize(border_width, self.geometry.height - 2 * border_width);
         self.borders.items[3].node.setPosition(self.geometry.width - border_width, border_width);
     }
-    self.scene_node.setPosition(self.geometry.x, self.geometry.y);
-    self.scene_surface.setPosition(border_width, border_width);
+    self.scene.node.setPosition(self.geometry.x, self.geometry.y);
+    self.scene_surface.node.setPosition(border_width, border_width);
 
-    _ = self.xdg_surface.role_data.toplevel.setSize(@intCast(u32, width), @intCast(u32, height));
+    self.updateSize(width, height);
 }
 
-pub fn setAppId(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+/// If the passed width and height are the same then this function is no-op
+pub fn updateSize(self: *Self, width: i32, height: i32) void {
+    if (self.geometry.width == width and self.geometry.height == height) {
+        return;
+    }
+
+    _ = self.xdg_surface.role_data.toplevel.setSize(width, height);
+}
+
+pub fn setAppId(listener: *wl.Listener(void)) void {
     const self = @fieldParentPtr(Self, "set_app_id", listener);
     log.debug("Signal: wlr_xdg_toplevel_set_app_id", .{});
 
     self.window.notifyAppId(self.getAppId());
 }
 
-pub fn setTitle(listener: *wl.Listener(*wlr.XdgSurface), _: *wlr.XdgSurface) void {
+pub fn setTitle(listener: *wl.Listener(void)) void {
     const self = @fieldParentPtr(Self, "set_title", listener);
     log.debug("Signal: wlr_xdg_toplevel_set_title", .{});
 

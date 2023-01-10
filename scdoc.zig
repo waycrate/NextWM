@@ -9,9 +9,8 @@ const std = @import("std");
 const allocator = @import("build.zig").allocator;
 
 pub fn build(builder: *std.build.Builder, docs_dir: []const u8) !void {
-    var dir = try std.fs.cwd().openDir(docs_dir, .{
+    var dir = try std.fs.cwd().openIterableDir(docs_dir, .{
         .access_sub_paths = true,
-        .iterate = true,
     });
     defer dir.close();
 

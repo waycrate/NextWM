@@ -8,12 +8,10 @@
 const Self = @This();
 
 const allocator = @import("../utils/allocator.zig").allocator;
-const assert = std.debug.assert;
 const log = std.log.scoped(.Window);
 const server = &@import("../next.zig").server;
 const std = @import("std");
 
-const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Server = @import("../Server.zig");
@@ -24,7 +22,7 @@ const Backend = union(enum) {
     xdg_toplevel: XdgToplevel,
 };
 
-server: *Server = server,
+server: *Server,
 output: *Output,
 
 wlr_foreign_toplevel_handle: *wlr.ForeignToplevelHandleV1 = undefined,
@@ -37,6 +35,7 @@ pub fn init(self: *Self, output: *Output, backend: Backend) !void {
         .output = output,
         .backend = backend,
         .wlr_foreign_toplevel_handle = try wlr.ForeignToplevelHandleV1.create(server.wlr_foreign_toplevel_manager),
+        .server = server,
     };
 
     server.pending_windows.append(allocator, self) catch {
@@ -94,7 +93,7 @@ pub fn handleDestroy(self: *Self) void {
                 border.node.destroy();
             }
             xdg_toplevel.borders.deinit(allocator);
-            xdg_toplevel.scene_node.destroy();
+            xdg_toplevel.scene.node.destroy();
         },
     }
     if (std.mem.indexOfScalar(*Self, self.server.mapped_windows.items, self)) |i| {

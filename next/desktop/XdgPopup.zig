@@ -8,7 +8,6 @@
 const Self = @This();
 
 const allocator = @import("../utils/allocator.zig").allocator;
-const assert = std.debug.assert;
 const log = std.log.scoped(.XdgPopup);
 const server = &@import("../next.zig").server;
 const std = @import("std");
@@ -16,7 +15,6 @@ const std = @import("std");
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
-const Output = @import("Output.zig");
 const XdgToplevel = @import("XdgToplevel.zig");
 const Server = @import("../Server.zig");
 const ParentSurface = union(enum) {
@@ -29,7 +27,7 @@ parent: ParentSurface,
 mapped: bool = false,
 
 popups: std.ArrayListUnmanaged(*Self) = .{},
-server: *Server = server,
+server: *Server,
 
 output_box: wlr.Box = undefined,
 
@@ -50,6 +48,7 @@ pub fn create(xdg_popup: *wlr.XdgPopup, parent: ParentSurface) ?*Self {
     self.* = .{
         .parent = parent,
         .wlr_xdg_popup = xdg_popup,
+        .server = server,
     };
 
     if (xdg_popup.base.data == 0) xdg_popup.base.data = @ptrToInt(self);
@@ -61,7 +60,7 @@ pub fn create(xdg_popup: *wlr.XdgPopup, parent: ParentSurface) ?*Self {
 
             var lx: f64 = 0;
             var ly: f64 = 0;
-            self.server.wlr_output_layout.closestPoint(
+            self.server.output_layout.wlr_output_layout.closestPoint(
                 null,
                 @intToFloat(f64, xdg_toplevel.geometry.x + box.x),
                 @intToFloat(f64, xdg_toplevel.geometry.y + box.y),
@@ -71,7 +70,7 @@ pub fn create(xdg_popup: *wlr.XdgPopup, parent: ParentSurface) ?*Self {
 
             var width: c_int = undefined;
             var height: c_int = undefined;
-            if (self.server.wlr_output_layout.outputAt(lx, ly)) |output| {
+            if (self.server.output_layout.wlr_output_layout.outputAt(lx, ly)) |output| {
                 output.effectiveResolution(&width, &height);
             } else {
                 log.warn("Failed to find output for xdg_popup", .{});

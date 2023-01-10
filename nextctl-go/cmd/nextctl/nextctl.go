@@ -69,8 +69,8 @@ func main() {
 		_ = Nextctl.next_control.AddArgument(arg)
 	}
 	callback, _ := Nextctl.next_control.RunCommand()
-	callback.AddSuccessHandler(Nextctl.NextSuccessHandler)
-	callback.AddFailureHandler(Nextctl.NextFailureHandler)
+	callback.SetSuccessHandler(Nextctl.NextSuccessHandler)
+	callback.SetFailureHandler(Nextctl.NextFailureHandler)
 	Nextctl.DisplayDispatch()
 
 	os.Exit(EXIT_SUCCESS)

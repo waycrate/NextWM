@@ -11,7 +11,7 @@ const std = @import("std");
 const allocator = @import("utils/allocator.zig").allocator;
 const log = std.log.scoped(.Config);
 
-const Window = @import("./desktop/Window.zig");
+const Window = @import("desktop/Window.zig");
 
 pub const CursorWarpMode = enum {
     disabled,
@@ -55,8 +55,11 @@ pub fn csdAllowed(self: Self, window: *Window) bool {
 pub fn deinit(self: *Self) void {
     log.debug("Destroying server configuration allocations", .{});
 
-    while (self.csd_app_ids.keyIterator().next()) |key| allocator.free(key.*);
-    while (self.csd_titles.keyIterator().next()) |key| allocator.free(key.*);
+    var app_id_it = self.csd_app_ids.keyIterator();
+    while (app_id_it.next()) |key| allocator.free(key.*);
+
+    var title_it = self.csd_titles.keyIterator();
+    while (title_it.next()) |key| allocator.free(key.*);
 
     self.csd_app_ids.deinit(allocator);
     self.csd_titles.deinit(allocator);

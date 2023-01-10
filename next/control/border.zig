@@ -6,7 +6,6 @@
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const std = @import("std");
-const fmt = std.fmt;
 const server = &@import("../next.zig").server;
 const allocator = @import("../utils/allocator.zig").allocator;
 

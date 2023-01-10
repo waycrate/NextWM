@@ -32,3 +32,27 @@ pub fn listInputs(
     }
     out.* = output.toOwnedSlice();
 }
+
+pub fn setRepeat(
+    args: []const [:0]const u8,
+    out: *?[]const u8,
+) !void {
+    if (args.len < 3) return Error.NotEnoughArguments;
+    if (args.len > 3) return Error.TooManyArguments;
+
+    const rate = std.fmt.parseInt(i32, args[1], 10) catch {
+        out.* = try std.fmt.allocPrint(allocator, "Failed to parse repeat-rate\n", .{});
+        return;
+    };
+    const delay = std.fmt.parseInt(i32, args[2], 10) catch {
+        out.* = try std.fmt.allocPrint(allocator, "Failed to parse repeat-delay\n", .{});
+        return;
+    };
+
+    server.config.repeat_rate = rate;
+    server.config.repeat_delay = delay;
+
+    for (server.keyboards.items) |keyboard| {
+        keyboard.wlr_input_device.toKeyboard().setRepeatInfo(rate, delay);
+    }
+}

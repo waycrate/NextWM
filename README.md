@@ -5,9 +5,10 @@ Manual tiling wayland compositor written with wlroots aimed to be a bspwm clone.
 Note: NextWM is still a work in progress project. It won't be useable anytime soon, but when it is I will be the first one to spam screenshots of it in the readme.
 
 <p align=center>
-    <a href="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/ubuntu.yml"><img src="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/ubuntu.yml.svg"</a>
+    <a href="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/alpine.yml"><img src="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/alpine.yml.svg"</a>
     <a href="https://github.com/waycrate/NextWM/actions"><img src="https://github.com/waycrate/nextwm/actions/workflows/arch.yaml/badge.svg"></a>
 </p>
+
 
 ## License:
 
@@ -21,6 +22,10 @@ The wlroots ecosystem is hard to initially get into as per my experience and I w
 ## Why multiple implementations of Nextctl?
 
 Since this project is meant to teach others, why not show people how wayland clients are written in different languages :) ?
+
+## To-Do
+
+Compress man pages using zig stdlib
 
 ## Building
 
@@ -44,10 +49,10 @@ Note: All Nextctl implementations are exactly identical.
 1. `scdoc` (Optional. If scdoc binary is not found, man pages are not generated.) *
 1. `wayland-protocols` *
 1. `wayland`
-1. `wlroots` 0.15
+1. `wlroots` 0.16
 1. `xkbcommon`
 1. `xwayland` (Optional. Required if you want Xwayland support.)
-1. `zig` 0.9.1 *
+1. `zig` 0.10.0 *
 
 _\* Compile-time dependencies_
 

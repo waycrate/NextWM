@@ -17,7 +17,6 @@ const wlr = @import("wlroots");
 const xkb = @import("xkbcommon");
 
 const Server = @import("../Server.zig");
-const Cursor = @import("Cursor.zig");
 
 server: *Server,
 
@@ -34,7 +33,7 @@ pub fn init(self: *Self, device: *wlr.InputDevice) void {
     self.* = .{
         .server = server,
         .wlr_input_device = device,
-        .wlr_keyboard = device.device.keyboard,
+        .wlr_keyboard = device.toKeyboard(),
     };
     self.server.keyboards.append(allocator, self) catch {
         log.err("Failed to allocate memory", .{});
@@ -71,15 +70,16 @@ fn handleKey(listener: *wl.Listener(*wlr.Keyboard.event.Key), event: *wlr.Keyboa
         if (!(event.state == .released) and handleCompositorBindings(sym)) return;
     }
 
-    self.server.seat.wlr_seat.setKeyboard(self.wlr_input_device);
+    self.server.seat.wlr_seat.setKeyboard(self.wlr_input_device.toKeyboard());
     self.server.seat.wlr_seat.keyboardNotifyKey(event.time_msec, event.keycode, event.state);
 }
 
 fn handleModifiers(listener: *wl.Listener(*wlr.Keyboard), _: *wlr.Keyboard) void {
     const self = @fieldParentPtr(Self, "modifiers", listener);
+    const wlr_keyboard = self.wlr_input_device.toKeyboard();
 
-    self.server.seat.wlr_seat.setKeyboard(self.wlr_input_device);
-    self.server.seat.wlr_seat.keyboardNotifyModifiers(&self.wlr_input_device.device.keyboard.modifiers);
+    self.server.seat.wlr_seat.setKeyboard(self.wlr_input_device.toKeyboard());
+    self.server.seat.wlr_seat.keyboardNotifyModifiers(&wlr_keyboard.modifiers);
 }
 
 fn handleDestroy(listener: *wl.Listener(*wlr.InputDevice), _: *wlr.InputDevice) void {

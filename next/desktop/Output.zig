@@ -40,7 +40,8 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
         // If preferred_mode setting failed then we iterate over all possible modes and attempt to set one.
         // If we set one succesfully then we break the loop!
         wlr_output.commit() catch {
-            while (wlr_output.modes.iterator(.forward).next()) |mode| {
+            var iterator = wlr_output.modes.iterator(.forward);
+            while (iterator.next()) |mode| {
                 if (mode == preferred_mode) continue;
                 wlr_output.setMode(mode);
                 wlr_output.commit() catch continue;
@@ -61,7 +62,7 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
     self.damage.events.frame.add(&self.frame);
 
     // Add the new output to the output_layout for automatic layout management by wlroots.
-    self.server.wlr_output_layout.addAuto(self.wlr_output);
+    self.server.output_layout.wlr_output_layout.addAuto(self.wlr_output);
     self.server.outputs.append(allocator, self) catch {
         log.err("Failed to allocate memory.", .{});
         return;
@@ -98,7 +99,7 @@ fn handleDestroy(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) v
     log.debug("Signal: wlr_output_destroy", .{});
 
     // Remove the output from the global compositor output layout.
-    self.server.wlr_output_layout.remove(wlr_output);
+    self.server.output_layout.wlr_output_layout.remove(wlr_output);
 
     // Find index of self from outputs and remove it.
     if (std.mem.indexOfScalar(*Self, self.server.outputs.items, self)) |i| {
@@ -115,7 +116,7 @@ pub fn getGeometry(self: *Self) struct { width: u64, height: u64, x: u64, y: u64
     var x: f64 = undefined;
     var y: f64 = undefined;
 
-    self.server.wlr_output_layout.outputCoords(self.wlr_output, &x, &y);
+    self.server.output_layout.wlr_output_layout.outputCoords(self.wlr_output, &x, &y);
     self.wlr_output.effectiveResolution(&width, &height);
 
     return .{

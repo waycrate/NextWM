@@ -7,9 +7,9 @@
 
 const Self = @This();
 
-const allocator = @import("./utils/allocator.zig").allocator;
+const allocator = @import("utils/allocator.zig").allocator;
 const build_options = @import("build_options");
-const c = @import("./utils/c.zig");
+const c = @import("utils/c.zig");
 const log = std.log.scoped(.Server);
 const std = @import("std");
 
@@ -17,15 +17,16 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Config = @import("Config.zig");
-const Control = @import("./global/Control.zig");
-const Cursor = @import("./input/Cursor.zig");
-const DecorationManager = @import("./desktop/DecorationManager.zig");
-const InputManager = @import("./input/InputManager.zig");
-const Keyboard = @import("./input/Keyboard.zig");
-const Output = @import("./desktop/Output.zig");
-const Seat = @import("./input/Seat.zig");
-const Window = @import("./desktop/Window.zig");
-const XdgToplevel = @import("./desktop/XdgToplevel.zig");
+const Control = @import("global/Control.zig");
+const Cursor = @import("input/Cursor.zig");
+const DecorationManager = @import("desktop/DecorationManager.zig");
+const InputManager = @import("input/InputManager.zig");
+const Keyboard = @import("input/Keyboard.zig");
+const Output = @import("desktop/Output.zig");
+const OutputLayout = @import("desktop/OutputLayout.zig");
+const Seat = @import("input/Seat.zig");
+const Window = @import("desktop/Window.zig");
+const XdgToplevel = @import("desktop/XdgToplevel.zig");
 
 const default_cursor_size = 24;
 
@@ -44,16 +45,17 @@ config: Config,
 control: Control,
 decoration_manager: DecorationManager,
 input_manager: InputManager,
+output_layout: OutputLayout,
 seat: *Seat,
 
 // Layers
-layer_bg: *wlr.SceneNode,
-layer_bottom: *wlr.SceneNode,
-layer_float: *wlr.SceneNode,
-layer_nofocus: *wlr.SceneNode,
-layer_overlay: *wlr.SceneNode,
-layer_tile: *wlr.SceneNode,
-layer_top: *wlr.SceneNode,
+layer_bg: *wlr.SceneTree,
+layer_bottom: *wlr.SceneTree,
+layer_float: *wlr.SceneTree,
+layer_nofocus: *wlr.SceneTree,
+layer_overlay: *wlr.SceneTree,
+layer_tile: *wlr.SceneTree,
+layer_top: *wlr.SceneTree,
 
 sigint_cb: *wl.EventSource,
 sigterm_cb: *wl.EventSource,
@@ -61,7 +63,6 @@ sigkill_cb: *wl.EventSource,
 sigabrt_cb: *wl.EventSource,
 sigquit_cb: *wl.EventSource,
 
-wlr_output_layout: *wlr.OutputLayout,
 wlr_output_manager: *wlr.OutputManagerV1,
 new_output: wl.Listener(*wlr.Output),
 
@@ -85,6 +86,9 @@ set_mode: wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode),
 
 wlr_cursor: *wlr.Cursor,
 wlr_xcursor_manager: *wlr.XcursorManager,
+
+wlr_xdg_activation_v1: *wlr.XdgActivationV1,
+request_activate: wl.Listener(*wlr.XdgActivationV1.event.RequestActivate),
 
 pub fn init(self: *Self) !void {
     // Creating the server itself.
@@ -124,22 +128,24 @@ pub fn init(self: *Self) !void {
     self.wlr_scene = try wlr.Scene.create();
 
     // Create an output layout to work with the physical arrangement of screens.
-    self.wlr_output_layout = try wlr.OutputLayout.create();
-    errdefer self.wlr_output_layout.destroy();
+    try self.output_layout.init();
 
     self.wlr_output_manager = try wlr.OutputManagerV1.create(self.wl_server);
-    _ = try wlr.XdgOutputManagerV1.create(self.wl_server, self.wlr_output_layout);
+    _ = try wlr.XdgOutputManagerV1.create(self.wl_server, self.output_layout.wlr_output_layout);
 
     // Create a wlr cursor object which is a wlroots utility to track the cursor on the screen.
     self.wlr_cursor = try wlr.Cursor.create();
     errdefer self.wlr_cursor.destroy();
+
+    // Create xdg_activation_v1
+    self.wlr_xdg_activation_v1 = try wlr.XdgActivationV1.create(self.wl_server);
 
     // Create a Xcursor manager which loads up xcursor themes on all scale factors. We pass null for theme name and 24 for the cursor size.
     self.wlr_xcursor_manager = try wlr.XcursorManager.create(null, default_cursor_size);
     errdefer self.wlr_xcursor_manager.destroy();
 
     // Creating a xdg_shell which is a wayland protocol for application windows.
-    self.wlr_xdg_shell = try wlr.XdgShell.create(self.wl_server);
+    self.wlr_xdg_shell = try wlr.XdgShell.create(self.wl_server, 5);
 
     // Creating a layer shell which is a wlroots protocol for layered textres
     // such as wallpapers and bars which are drawn *over* other windows.
@@ -151,17 +157,18 @@ pub fn init(self: *Self) !void {
     self.wlr_power_manager = try wlr.OutputPowerManagerV1.create(self.wl_server);
 
     // Creating the seat.
-    self.seat = try allocator.create(Seat);
-    try self.seat.init();
+    const seat = try allocator.create(Seat);
+    try seat.init();
+    self.seat = seat;
 
     // Creating toplevel layers:
-    self.layer_bg = &(try self.wlr_scene.node.createSceneTree()).node;
-    self.layer_bottom = &(try self.wlr_scene.node.createSceneTree()).node;
-    self.layer_float = &(try self.wlr_scene.node.createSceneTree()).node;
-    self.layer_nofocus = &(try self.wlr_scene.node.createSceneTree()).node;
-    self.layer_overlay = &(try self.wlr_scene.node.createSceneTree()).node;
-    self.layer_tile = &(try self.wlr_scene.node.createSceneTree()).node;
-    self.layer_top = &(try self.wlr_scene.node.createSceneTree()).node;
+    self.layer_bg = try self.wlr_scene.tree.createSceneTree();
+    self.layer_bottom = try self.wlr_scene.tree.createSceneTree();
+    self.layer_float = try self.wlr_scene.tree.createSceneTree();
+    self.layer_nofocus = try self.wlr_scene.tree.createSceneTree();
+    self.layer_overlay = try self.wlr_scene.tree.createSceneTree();
+    self.layer_tile = try self.wlr_scene.tree.createSceneTree();
+    self.layer_top = try self.wlr_scene.tree.createSceneTree();
 
     // Initializing Xwayland.
     if (build_options.xwayland) {
@@ -173,10 +180,10 @@ pub fn init(self: *Self) !void {
     try self.wlr_renderer.initServer(self.wl_server);
 
     // Attach the output layout to the scene graph so we get automatic damage tracking.
-    try self.wlr_scene.attachOutputLayout(self.wlr_output_layout);
+    try self.wlr_scene.attachOutputLayout(self.output_layout.wlr_output_layout);
 
     // Attach the cursor to the output layout.
-    self.wlr_cursor.attachOutputLayout(self.wlr_output_layout);
+    self.wlr_cursor.attachOutputLayout(self.output_layout.wlr_output_layout);
 
     // NOTE: These all free themselves when wlr_server is destroy.
     // Create the data device manager from the server, this generally handles the input events such as keyboard, mouse, touch etc.
@@ -212,6 +219,9 @@ pub fn init(self: *Self) !void {
     self.new_layer_surface.setNotify(newLayerSurface);
     self.wlr_layer_shell.events.new_surface.add(&self.new_layer_surface);
 
+    self.request_activate.setNotify(requestActivate);
+    self.wlr_xdg_activation_v1.events.request_activate.add(&self.request_activate);
+
     // Add a callback when a xwayland surface is created.
     if (build_options.xwayland) {
         self.new_xwayland_surface.setNotify(newXwaylandSurface);
@@ -226,7 +236,7 @@ pub fn start(self: *Self) !void {
     const socket = try self.wl_server.addSocketAuto(&buf);
 
     // Set the wayland_display environment variable.
-    if (c.setenv("WAYLAND_DISPLAY", socket, 1) < 0) return error.SetenvError;
+    if (c.setenv("WAYLAND_DISPLAY", socket.ptr, 1) < 0) return error.SetenvError;
     if (build_options.xwayland) if (c.setenv("DISPLAY", self.wlr_xwayland.display_name, 1) < 0) return error.SetenvError;
 
     try self.wlr_backend.start();
@@ -280,7 +290,8 @@ pub fn deinit(self: *Self) void {
 
     self.wlr_cursor.destroy();
     self.wlr_xcursor_manager.destroy();
-    self.wlr_output_layout.destroy();
+    self.output_layout.deinit();
+
     self.seat.deinit();
 
     // Destroy the server.
@@ -290,10 +301,30 @@ pub fn deinit(self: *Self) void {
 }
 
 // This is called to gracefully handle signals.
-fn terminateCb(_: c_int, wl_server: *wl.Server) callconv(.C) c_int {
-    log.info("Termination event loop.", .{});
+fn terminateCb(_: c_int, wl_server: *wl.Server) c_int {
+    log.info("Terminating event loop.", .{});
     wl_server.terminate();
     return 0;
+}
+
+fn requestActivate(
+    _: *wl.Listener(*wlr.XdgActivationV1.event.RequestActivate),
+    event: *wlr.XdgActivationV1.event.RequestActivate,
+) void {
+    log.debug("Signal: wlr_xdg_activation_v1_request_activate", .{});
+    // Handle xwayland and subsurfaces
+    var window: ?*Window = null;
+    if (event.surface.isXdgSurface()) {
+        if (wlr.XdgSurface.fromWlrSurface(event.surface)) |xdg_surface| {
+            if (xdg_surface.role == .toplevel) {
+                window = @intToPtr(*Window, xdg_surface.data);
+            }
+        }
+    }
+
+    //TODO: Focus on the window and warp the cursor to it's center?
+    //if (window) |win| {
+    //}
 }
 
 // Callback that gets triggered on existence of a new output.
@@ -385,16 +416,16 @@ fn setMode(listener: *wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode), even
     // If the commit didn't fail then go ahead and edit the output_layout :)
     switch (event.mode) {
         .on => {
-            if (self.wlr_output_layout.get(event.output)) |_| {
+            if (self.output_layout.wlr_output_layout.get(event.output)) |_| {
                 log.debug("Output is already in output_layout", .{});
             } else {
                 log.debug("Adding output to output_layout", .{});
-                self.wlr_output_layout.addAuto(event.output);
+                self.output_layout.wlr_output_layout.addAuto(event.output);
             }
         },
         .off => {
-            if (self.wlr_output_layout.get(event.output)) |_| {
-                self.wlr_output_layout.remove(event.output);
+            if (self.output_layout.wlr_output_layout.get(event.output)) |_| {
+                self.output_layout.wlr_output_layout.remove(event.output);
             } else {
                 log.debug("Output is already absent from the output_layout, not removing", .{});
             }

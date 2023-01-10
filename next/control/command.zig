@@ -8,7 +8,12 @@
 const std = @import("std");
 const assert = std.debug.assert;
 
-const wlr = @import("wlroots");
+const border = @import("border.zig");
+const cursor = @import("cursor.zig");
+const inputs = @import("inputs.zig");
+const csd = @import("csd.zig");
+const exit = @import("exit.zig");
+const outputs = @import("outputs.zig");
 
 pub const Error = error{
     NoCommand,
@@ -21,18 +26,18 @@ pub const Error = error{
 
 // zig fmt: off
 const commands = std.ComptimeStringMap(
-    fn ([]const [:0]const u8, *?[]const u8) Error!void,
+    *const fn ([]const [:0]const u8, *?[]const u8) Error!void,
     .{
-        .{ "border-width",                  @import("border.zig").setWidth          },
+        .{ "border-width",                  border.setWidth          },
         // TODO: This is just a catch all. We will create border-focused, border-unfocused, etc soon.
-        .{ "border-color",                  @import("border.zig").setColor          },
-        .{ "csd",                           @import("csd.zig").csdToggle            },
-        .{ "exit",                          @import("exit.zig").exit                },
-        .{ "list-inputs",                   @import("inputs.zig").listInputs        },
-        .{ "list-outputs",                  @import("outputs.zig").listOutputs      },
-        .{ "set-repeat-rate",               @import("set_repeat.zig").setRepeat     },
-        .{ "warp-cursor",                   @import("cursor.zig").warpCursor        },
-        .{ "hide-cursor",                   @import("cursor.zig").hideCursor        },
+        .{ "border-color",                  border.setColor          },
+        .{ "csd",                           csd.csdToggle            },
+        .{ "exit",                          exit.exitRiver           },
+        .{ "list-inputs",                   inputs.listInputs        },
+        .{ "list-outputs",                  outputs.listOutputs      },
+        .{ "set-repeat-rate",               inputs.setRepeat         },
+        .{ "warp-cursor",                   cursor.warpCursor        },
+        .{ "hide-cursor",                   cursor.hideCursor        },
     },
 );
 // zig fmt: on

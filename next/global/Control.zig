@@ -10,17 +10,17 @@ const Self = @This();
 const std = @import("std");
 const allocator = @import("../utils/allocator.zig").allocator;
 const command = @import("../control/command.zig");
-const next = @import("wayland").server.next;
 const server = &@import("../next.zig").server;
 
-const wl = @import("wayland").server.wl;
-const wlr = @import("wlroots");
+const wayland = @import("wayland");
+const next = wayland.server.next;
+const wl = wayland.server.wl;
 
 const ArgMap = std.AutoHashMap(struct { client: *wl.Client, id: u32 }, std.ArrayListUnmanaged([:0]const u8));
 
 global: *wl.Global,
 server_destroy: wl.Listener(*wl.Server) = wl.Listener(*wl.Server).init(serverDestroy),
-args: ArgMap = std.AutoHashMap.init(),
+args: ArgMap,
 
 pub fn init(self: *Self) !void {
     self.* = .{
@@ -37,7 +37,7 @@ fn serverDestroy(listener: *wl.Listener(*wl.Server), _: *wl.Server) void {
     self.args.deinit();
 }
 
-fn bind(client: *wl.Client, self: *Self, version: u32, id: u32) callconv(.C) void {
+fn bind(client: *wl.Client, self: *Self, version: u32, id: u32) void {
     const control = next.ControlV1.create(client, version, id) catch {
         client.postNoMemory();
         return;

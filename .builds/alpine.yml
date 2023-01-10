@@ -1,0 +1,67 @@
+image: alpine/edge
+packages:
+  - cargo
+  - clang
+  - clang-dev
+  - eudev-dev
+  - expat-dev
+  - go
+  - hwdata
+  - libevdev-dev
+  - libffi-dev
+  - libinput-dev
+  - libseat-dev
+  - libxkbcommon-dev
+  - mesa-dev
+  - meson
+  - pixman-dev
+  - rustfmt
+  - scdoc
+  - tar
+  - wayland-protocols
+  - wget
+  - xcb-util-image-dev
+  - xcb-util-renderutil-dev
+  - xcb-util-wm-dev
+  - xwayland
+sources:
+    - https://git.sr.ht/~shinyzenith/NextWM
+    - https://gitlab.freedesktop.org/wayland/wayland.git
+    - https://gitlab.freedesktop.org/wlroots/wlroots.git
+tasks:
+    - install-deps: |
+          ZIG_VERSION=0.10.0
+          WAYLAND_VERSION=1.21.0
+          WLROOTS_VERSION=0.16.0
+
+          cd wayland
+          git checkout $WAYLAND_VERSION
+          meson setup build -Ddocumentation=false -Dtests=false --prefix /usr
+          sudo ninja -C build install
+          cd ..
+
+          cd wlroots
+          git checkout $WLROOTS_VERSION
+          meson setup build --auto-features=enabled -Drenderers=gles2 -Dexamples=false -Dwerror=false -Db_ndebug=false -Dxcb-errors=disabled --prefix /usr
+          sudo ninja -C build install
+          cd ..
+
+          wget -nv https://ziglang.org/download/$ZIG_VERSION/zig-linux-x86_64-$ZIG_VERSION.tar.xz
+          tar -xvf zig-linux-x86_64-$ZIG_VERSION.tar.xz 1>/dev/null
+          sudo mv ./zig-linux-x86_64-$ZIG_VERSION/zig /usr/bin
+          sudo mv ./zig-linux-x86_64-$ZIG_VERSION/lib /usr/lib/zig
+
+    - build: |
+          make -C NextWM
+
+    - build-xwayland: |
+          make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy" -C NextWM
+
+    - build-rs: |
+          make -C NextWM/nextctl-rs
+
+    - build-go: |
+          make -C NextWM/nextctl-go
+
+    - fmt: |
+          make check -C NextWM

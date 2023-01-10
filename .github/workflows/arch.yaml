@@ -12,9 +12,34 @@ jobs:
               run: |
                   sed -i 's/SigLevel    = Required DatabaseOptional/SigLevel    = Optional TrustAll/' /etc/pacman.conf
                   pacman --noconfirm --noprogressbar -Syyu
-                  pacman --noconfirm --noprogressbar -Sy wlroots wayland wayland-protocols xorg-xwayland zig make git pkgconf scdoc clang rustup go
+                  pacman --noconfirm --noprogressbar -Sy wayland-protocols xorg-xwayland make git pkgconf scdoc clang rustup go meson wget libdrm libinput mesa libffi expat hwdata libxkbcommon xcb-util-image xcb-util-renderutil xcb-util-wm pixman libevdev seatd libxcb xcb-proto xcb-util-errors
                   rustup install stable
                   rustup default stable
+
+            - name: Installing dependencies
+              run: |
+                  ZIG_VERSION=0.10.0
+                  WAYLAND_VERSION=1.21.0
+                  WLROOTS_VERSION=0.16.0
+
+                  git clone https://gitlab.freedesktop.org/wayland/wayland.git
+                  cd wayland
+                  git checkout $WAYLAND_VERSION
+                  meson setup build -Ddocumentation=false -Dtests=false --prefix /usr
+                  ninja -C build install
+                  cd ..
+
+                  git clone https://gitlab.freedesktop.org/wlroots/wlroots.git
+                  cd wlroots
+                  git checkout $WLROOTS_VERSION
+                  meson setup build --auto-features=enabled -Drenderers=gles2 -Dexamples=false -Dwerror=false -Db_ndebug=false --prefix /usr
+                  ninja -C build install
+                  cd ..
+
+                  wget -nv https://ziglang.org/download/$ZIG_VERSION/zig-linux-x86_64-$ZIG_VERSION.tar.xz
+                  tar -xvf zig-linux-x86_64-$ZIG_VERSION.tar.xz 1>/dev/null
+                  mv ./zig-linux-x86_64-$ZIG_VERSION/zig /usr/bin
+                  mv ./zig-linux-x86_64-$ZIG_VERSION/lib /usr/lib/zig
 
             - name: Checkout NextWM
               uses: actions/checkout@v3

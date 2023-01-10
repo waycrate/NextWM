@@ -5,9 +5,9 @@
 // Created by:	Aakash Sen Sharma, May 2022
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
-const allocator = @import("./utils/allocator.zig").allocator;
+const allocator = @import("utils/allocator.zig").allocator;
 const build_options = @import("build_options");
-const c = @import("./utils/c.zig");
+const c = @import("utils/c.zig");
 const clap = @import("clap");
 const fs = std.fs;
 const io = std.io;
@@ -15,8 +15,6 @@ const mem = std.mem;
 const os = std.os;
 const std = @import("std");
 
-// Wl namespace for server-side libwayland bindings.
-const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Server = @import("Server.zig");
@@ -31,38 +29,39 @@ pub const log_level: std.log.Level = .debug;
 pub var runtime_log_level: std.log.Level = .err;
 
 pub fn main() anyerror!void {
-    const params = comptime [_]clap.Param(clap.Help){
-        clap.parseParam("-h, --help             Print this help message and exit.           ") catch unreachable,
-        clap.parseParam("-v, --version          Print the version number and exit.          ") catch unreachable,
-        clap.parseParam("-c, --command <STR>    Run `sh -c <STR>` on startup.               ") catch unreachable,
-        clap.parseParam("-d, --debug            Set log level to debug mode.                ") catch unreachable,
-        clap.parseParam("-l, --level <STR>      Set the log level: error, warnings, or info.") catch unreachable,
-    };
+    const params = comptime clap.parseParamsComptime(
+        \\-h, --help             print this help message and exit.
+        \\-v, --version          print the version number and exit.
+        \\-c, --command <str>    run `sh -c <str>` on startup.
+        \\-d, --debug            set log level to debug mode.
+        \\-l, --level <str>      set the log level: error, warnings, or info.
+    );
 
-    var args = clap.parse(clap.Help, &params, .{}) catch |err| {
+    var res = clap.parse(clap.Help, &params, clap.parsers.default, .{}) catch |err| {
         try stderr.print("Failed to parse arguments: {s}\n", .{@errorName(err)});
         return;
     };
-    defer args.deinit();
+    var args = res.args;
+    defer res.deinit();
 
     // Print help message if requested.
-    if (args.flag("--help")) {
+    if (args.help) {
         try stderr.writeAll("Usage: next [options]\n");
-        return clap.help(stderr, &params);
+        return clap.help(stderr, clap.Help, &params, .{});
     }
 
     // Print version information if requested.
-    if (args.flag("--version")) {
+    if (args.version) {
         try stdout.print("Next version: {s}\n", .{build_options.version});
         return;
     }
 
-    if (args.flag("--debug")) {
+    if (args.debug) {
         runtime_log_level = .debug;
     }
 
     //Fetch the log level specified or fallback to info.
-    if (args.option("--level")) |level| {
+    if (args.level) |level| {
         if (mem.eql(u8, level, std.log.Level.err.asText())) {
             runtime_log_level = .err;
         } else if (mem.eql(u8, level, std.log.Level.warn.asText())) {
@@ -80,7 +79,7 @@ pub fn main() anyerror!void {
     // Fetching the startup command.
     const startup_command = blk: {
         // If command flag is mentioned, use it.
-        if (args.option("--command")) |command| {
+        if (args.command) |command| {
             break :blk try allocator.dupeZ(u8, command);
         } else {
             // Try to resolve xdg_config_home or home respectively and use their path's if possible.
@@ -127,12 +126,11 @@ pub fn main() anyerror!void {
     // Ignore SIGPIPE so the compositor doesn't get killed when attempting to write to a read-end-closed socket.
     // TODO: Remove this handler entirely: https://github.com/ziglang/zig/pull/11982
     const sig_ign = os.Sigaction{
-        // TODO: Remove this casting after https://github.com/ziglang/zig/pull/12410
-        .handler = .{ .handler = @intToPtr(os.Sigaction.handler_fn, @ptrToInt(os.SIG.IGN)) },
+        .handler = .{ .handler = os.SIG.IGN },
         .mask = os.empty_sigset,
         .flags = 0,
     };
-    os.sigaction(os.SIG.PIPE, &sig_ign, null);
+    try os.sigaction(os.SIG.PIPE, &sig_ign, null);
 
     // Attempt to initialize the server, deinitialize it once the block ends.
     std.log.info("Initializing server", .{});
@@ -156,12 +154,11 @@ pub fn main() anyerror!void {
 
         // Setting default handler for sigpipe.
         const sig_dfl = os.Sigaction{
-            // TODO: Remove this casting after https://github.com/ziglang/zig/pull/12410
-            .handler = .{ .handler = @intToPtr(?os.Sigaction.handler_fn, @ptrToInt(os.SIG.DFL)) },
+            .handler = .{ .handler = os.SIG.DFL },
             .mask = os.empty_sigset,
             .flags = 0,
         };
-        os.sigaction(os.SIG.PIPE, &sig_dfl, null);
+        try os.sigaction(os.SIG.PIPE, &sig_dfl, null);
 
         // NOTE: it's convention for the first element in the argument vector to be same as the invoking binary.
         // Read https://man7.org/linux/man-pages/man2/execve.2.html for more info.

@@ -12,6 +12,7 @@ build:
 check:
 	@echo $(FMT_REQUIRED)
 	@test -z $(FMT_REQUIRED)
+	go vet ./...
 
 clean:
 	go clean

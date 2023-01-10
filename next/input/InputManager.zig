@@ -46,7 +46,6 @@ pub fn init(self: *Self) !void {
 
 fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDevice) void {
     const self = @fieldParentPtr(Self, "new_input", listener);
-
     log.debug("Signal: wlr_backend_new_input", .{});
 
     switch (input_device.type) {
@@ -81,7 +80,7 @@ pub fn setSeatCapabilities(self: *Self) void {
     const has_keyboard = (self.server.keyboards.items.len > 0);
     const has_pointer = (self.server.cursors.items.len > 0);
 
-    log.debug("Setting seat capabilities: Pointer->{s} Keyboard->{s}", .{ has_pointer, has_keyboard });
+    log.debug("Setting seat capabilities: Pointer->{} Keyboard->{}", .{ has_pointer, has_keyboard });
     self.server.seat.wlr_seat.setCapabilities(.{
         .pointer = has_pointer,
         .keyboard = has_keyboard,
