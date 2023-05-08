@@ -245,6 +245,9 @@ pub fn start(self: *Self) !void {
     if (build_options.xwayland) {
         log.info("Xwayland initialized at {s}", .{self.wlr_xwayland.display_name});
     }
+
+    log.info("Setting cursor image to left_ptr", .{});
+    self.wlr_xcursor_manager.setCursorImage("left_ptr", self.wlr_cursor);
 }
 
 pub fn deinit(self: *Self) void {
