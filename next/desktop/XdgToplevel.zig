@@ -39,9 +39,9 @@ new_popup: wl.Listener(*wlr.XdgPopup) = wl.Listener(*wlr.XdgPopup).init(newPopup
 set_title: wl.Listener(void) = wl.Listener(void).init(setTitle),
 
 pub fn init(focused_output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
-    log.debug("New xdg_shell toplevel received: title={any} app_id={any}", .{
-        xdg_surface.role_data.toplevel.title,
-        xdg_surface.role_data.toplevel.app_id,
+    log.debug("New xdg_shell toplevel received: title=\"{s}\" app_id=\"{s}\"", .{
+        getXdgSurfaceTitle(xdg_surface),
+        getXdgSurfaceAppID(xdg_surface),
     });
 
     const window = allocator.create(Window) catch {
@@ -215,15 +215,22 @@ pub fn setTitle(listener: *wl.Listener(void)) void {
 }
 
 pub fn getTitle(self: Self) [*:0]const u8 {
-    if (self.xdg_surface.role_data.toplevel.title) |title| {
+    return getXdgSurfaceTitle(self.xdg_surface);
+}
+
+pub fn getAppId(self: Self) [*:0]const u8 {
+    return getXdgSurfaceAppID(self.xdg_surface);
+}
+
+fn getXdgSurfaceTitle(xdg_surface: *wlr.XdgSurface) [*:0]const u8 {
+    if (xdg_surface.role_data.toplevel.title) |title| {
         return title;
     } else {
         return "<No Title>";
     }
 }
-
-pub fn getAppId(self: Self) [*:0]const u8 {
-    if (self.xdg_surface.role_data.toplevel.app_id) |app_id| {
+fn getXdgSurfaceAppID(xdg_surface: *wlr.XdgSurface) [*:0]const u8 {
+    if (xdg_surface.role_data.toplevel.app_id) |app_id| {
         return app_id;
     } else {
         return "<No AppId>";
