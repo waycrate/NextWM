@@ -89,10 +89,9 @@ pub fn setMon(self: *Self, output: *Output) void {
 pub fn handleDestroy(self: *Self) void {
     switch (self.backend) {
         .xdg_toplevel => |*xdg_toplevel| {
-            for (xdg_toplevel.borders.items) |border| {
+            for (xdg_toplevel.borders) |border| {
                 border.node.destroy();
             }
-            xdg_toplevel.borders.deinit(allocator);
             xdg_toplevel.scene.node.destroy();
         },
     }

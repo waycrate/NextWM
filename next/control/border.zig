@@ -51,7 +51,7 @@ pub fn setColor(
     for (server.mapped_windows.items) |window| {
         switch (window.backend) {
             .xdg_toplevel => |xdg_toplevel| {
-                for (xdg_toplevel.borders.items) |border| {
+                for (xdg_toplevel.borders) |border| {
                     border.setColor(&server.config.border_color);
                 }
             },
