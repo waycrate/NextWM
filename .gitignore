@@ -10,3 +10,4 @@ nextctl/nextctl
 target/
 zig-cache
 zig-out
+/next/protocols/*.h

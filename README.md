@@ -25,7 +25,8 @@ Since this project is meant to teach others, why not show people how wayland cli
 
 ## To-Do
 
-Compress man pages using zig stdlib
+1. Compress man pages using zig stdlib
+1. Completely remove all dependency on `make`
 
 ## Building
 

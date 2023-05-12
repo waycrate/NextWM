@@ -1,0 +1,5 @@
+-DWLR_USE_UNSTABLE
+-I./include/
+-I./protocols/
+-I/usr/include/pixman-1
+-std=c++20
