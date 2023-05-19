@@ -2,4 +2,4 @@
 -I./include/
 -I./protocols/
 -I/usr/include/pixman-1
--std=c++20
+-std=c++17

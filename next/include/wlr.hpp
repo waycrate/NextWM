@@ -19,7 +19,7 @@
 
 // https://github.com/swaywm/wlroots/issues/682
 #define class _class
-#define delete delete_
+#define delete _delete
 #define namespace _namespace
 #define static
 

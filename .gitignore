@@ -11,3 +11,4 @@ target/
 zig-cache
 zig-out
 /next/protocols/*.h
+/next/next
