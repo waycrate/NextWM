@@ -99,14 +99,14 @@ pub fn handleDestroy(self: *Self) void {
         log.warn("Window destroyed before unmap event.", .{});
         self.wlr_foreign_toplevel_handle.destroy();
 
-        const window = self.server.mapped_windows.orderedRemove(i);
+        const window = self.server.mapped_windows.swapRemove(i);
         allocator.destroy(window);
         allocator.destroy(self);
     } else {
         if (std.mem.indexOfScalar(*Self, server.pending_windows.items, self)) |i| {
             self.wlr_foreign_toplevel_handle.destroy();
 
-            const window = self.server.pending_windows.orderedRemove(i);
+            const window = self.server.pending_windows.swapRemove(i);
             allocator.destroy(window);
             allocator.destroy(self);
         }

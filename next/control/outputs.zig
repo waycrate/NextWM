@@ -22,12 +22,20 @@ pub fn listOutputs(
 
     for (server.outputs.items) |output| {
         const geometry = output.getGeometry();
-        try writer.print("{s}\n\tx: {d} y: {d} width: {d} height: {d}\n", .{
+        //TODO: See what is dpmsStatus
+        //TODO: Add model, serial, scale, transform, focused_status, vrr,
+        try writer.print("{s}\n\t{d}x{d}@{d} at {d},{d}\n\tScale: {d}\n\tDescription: {s}\n\tMake: {s}\n\tEnabled: {d}\n\tVRR: {d}\n", .{
             output.wlr_output.name,
-            geometry.x,
-            geometry.y,
             geometry.width,
             geometry.height,
+            output.refresh_rate,
+            geometry.x,
+            geometry.y,
+            output.wlr_output.scale,
+            output.getDescription(),
+            output.getMake(),
+            @boolToInt(output.wlr_output.enabled),
+            @boolToInt(output.wlr_output.adaptive_sync_status == .enabled),
         });
     }
     out.* = data.toOwnedSlice();

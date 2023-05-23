@@ -118,7 +118,7 @@ pub fn handleMap(listener: *wl.Listener(void)) void {
 
     // Find index of self from pending_windows and remove it.
     if (std.mem.indexOfScalar(*Window, server.pending_windows.items, self.window)) |i| {
-        _ = server.pending_windows.orderedRemove(i);
+        _ = server.pending_windows.swapRemove(i);
     }
 
     // Appending should happen regardless of us finding the window in pending_windows.
@@ -144,7 +144,7 @@ pub fn handleUnmap(listener: *wl.Listener(void)) void {
     log.debug("Signal: wlr_xdg_surface_unmap", .{});
 
     if (std.mem.indexOfScalar(*Window, server.mapped_windows.items, self.window)) |i| {
-        _ = server.mapped_windows.orderedRemove(i);
+        _ = server.mapped_windows.swapRemove(i);
     }
     if (server.seat.wlr_seat.keyboard_state.focused_surface) |focused_surface| {
         if (focused_surface == self.xdg_surface.surface) {

@@ -87,7 +87,7 @@ fn handleDestroy(listener: *wl.Listener(*wlr.InputDevice), _: *wlr.InputDevice) 
     log.debug("Signal: wlr_input_device_destroy (keyboard)", .{});
 
     if (std.mem.indexOfScalar(*Self, self.server.keyboards.items, self)) |i| {
-        const keyboard = self.server.keyboards.orderedRemove(i);
+        const keyboard = self.server.keyboards.swapRemove(i);
         allocator.destroy(keyboard);
     }
 

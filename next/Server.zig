@@ -38,6 +38,7 @@ wlr_renderer: *wlr.Renderer,
 wlr_allocator: *wlr.Allocator,
 wlr_scene: *wlr.Scene,
 wlr_compositor: *wlr.Compositor,
+wlr_subcompositor: *wlr.Subcompositor,
 
 wlr_foreign_toplevel_manager: *wlr.ForeignToplevelManagerV1,
 
@@ -47,6 +48,7 @@ decoration_manager: DecorationManager,
 input_manager: InputManager,
 output_layout: OutputLayout,
 seat: *Seat,
+drm_fd: c_int,
 
 // Layers
 layer_bg: *wlr.SceneTree,
@@ -67,6 +69,7 @@ wlr_output_manager: *wlr.OutputManagerV1,
 new_output: wl.Listener(*wlr.Output),
 
 outputs: std.ArrayListUnmanaged(*Output),
+non_desktop_outputs: std.ArrayListUnmanaged(*Output),
 keyboards: std.ArrayListUnmanaged(*Keyboard),
 cursors: std.ArrayListUnmanaged(*Cursor),
 
@@ -87,6 +90,8 @@ set_mode: wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode),
 wlr_cursor: *wlr.Cursor,
 wlr_xcursor_manager: *wlr.XcursorManager,
 
+wlr_drm_lease_manager: ?*wlr.DrmLeaseV1Manager,
+
 wlr_xdg_activation_v1: *wlr.XdgActivationV1,
 request_activate: wl.Listener(*wlr.XdgActivationV1.event.RequestActivate),
 
@@ -102,6 +107,9 @@ pub fn init(self: *Self) !void {
     self.sigquit_cb = try self.wl_event_loop.addSignal(*wl.Server, std.os.SIG.QUIT, terminateCb, self.wl_server);
     self.sigterm_cb = try self.wl_event_loop.addSignal(*wl.Server, std.os.SIG.TERM, terminateCb, self.wl_server);
 
+    //TODO: Die on detecting set_uid bit unless the user really knows what they're doing (--i-am-really-stupid)
+    //TODO: Increase nofile_limit
+
     // Determine the backend based on the current environment to render with such as opening an X11 window if an X11 server is running.
     // NOTE: This frees itself when the server is destroyed.
     self.wlr_backend = try wlr.Backend.autocreate(self.wl_server);
@@ -110,8 +118,15 @@ pub fn init(self: *Self) !void {
     // NOTE: This frees itself when server is destroyed.
     self.wlr_headless_backend = try wlr.Backend.createHeadless(self.wl_server);
 
+    // Getting the DRM FD.
+    self.drm_fd = self.wlr_backend.getDrmFd();
+    if (self.drm_fd < 0) {
+        log.err("Couldn't query the DRM FD!", .{});
+        return;
+    }
+
     // Creating the renderer.
-    self.wlr_renderer = try wlr.Renderer.autocreate(self.wlr_backend);
+    self.wlr_renderer = try wlr.Renderer.createGles2WithDrmFd(self.drm_fd);
     errdefer self.wlr_renderer.destroy();
 
     // Autocreate an allocator. An allocator acts as a bridge between the renderer and the backend allowing us to render to the screen by handling buffer creation.
@@ -120,6 +135,10 @@ pub fn init(self: *Self) !void {
 
     // Create the compositor from the server and renderer.
     self.wlr_compositor = try wlr.Compositor.create(self.wl_server, self.wlr_renderer);
+    self.wlr_subcompositor = try wlr.Subcompositor.create(self.wl_server);
+
+    //NOTE: This has to be initialized as one of the first wayland globals inorder to not crash on middle-button paste in gtk3...ugh.
+    _ = try wlr.PrimarySelectionDeviceManagerV1.create(self.wl_server);
 
     // Create foreign toplevel manager
     self.wlr_foreign_toplevel_manager = try wlr.ForeignToplevelManagerV1.create(self.wl_server);
@@ -143,6 +162,9 @@ pub fn init(self: *Self) !void {
     // Create a Xcursor manager which loads up xcursor themes on all scale factors. We pass null for theme name and 24 for the cursor size.
     self.wlr_xcursor_manager = try wlr.XcursorManager.create(null, default_cursor_size);
     errdefer self.wlr_xcursor_manager.destroy();
+
+    // Create a DRM Lease manager to handoff the compositor GPU handle to possible clients.
+    self.wlr_drm_lease_manager = wlr.DrmLeaseV1Manager.create(self.wl_server, self.wlr_backend);
 
     // Creating a xdg_shell which is a wayland protocol for application windows.
     self.wlr_xdg_shell = try wlr.XdgShell.create(self.wl_server, 5);
@@ -187,12 +209,13 @@ pub fn init(self: *Self) !void {
 
     // NOTE: These all free themselves when wlr_server is destroy.
     // Create the data device manager from the server, this generally handles the input events such as keyboard, mouse, touch etc.
-    _ = try wlr.DataControlManagerV1.create(self.wl_server);
     _ = try wlr.DataDeviceManager.create(self.wl_server);
+    _ = try wlr.DataControlManagerV1.create(self.wl_server);
     _ = try wlr.ExportDmabufManagerV1.create(self.wl_server);
     _ = try wlr.GammaControlManagerV1.create(self.wl_server);
     _ = try wlr.PrimarySelectionDeviceManagerV1.create(self.wl_server);
     _ = try wlr.ScreencopyManagerV1.create(self.wl_server);
+    _ = try wlr.SinglePixelBufferManagerV1.create(self.wl_server);
     _ = try wlr.Viewporter.create(self.wl_server);
 
     try self.control.init();
@@ -277,9 +300,15 @@ pub fn deinit(self: *Self) void {
     self.pending_windows.deinit(allocator);
 
     for (self.outputs.items) |item| {
+        allocator.destroy(item.next_renderer);
         allocator.destroy(item);
     }
     self.outputs.deinit(allocator);
+
+    for (self.non_desktop_outputs.items) |item| {
+        allocator.destroy(item);
+    }
+    self.non_desktop_outputs.deinit(allocator);
 
     for (self.cursors.items) |item| {
         allocator.destroy(item);

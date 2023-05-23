@@ -26,6 +26,7 @@ Since this project is meant to teach others, why not show people how wayland cli
 ## To-Do
 
 Compress man pages using zig stdlib
+In-build, simple, wallpaper setting for each output. For complex cases, simply use other tools.
 
 ## Building
 

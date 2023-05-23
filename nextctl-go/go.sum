@@ -1,4 +1,4 @@
-github.com/rajveermalviya/go-wayland/wayland v0.0.0-20221011124432-87abca507f9b h1:x2TE7KxsIzGA/7roNXliNphqHU+ynCrHuzXx9YFLBag=
-github.com/rajveermalviya/go-wayland/wayland v0.0.0-20221011124432-87abca507f9b/go.mod h1:DK7Q1NjBctRTVbrXi+e1u+3EgBRv0RcPuXSLXHC8QJg=
+github.com/rajveermalviya/go-wayland/wayland v0.0.0-20230130181619-0ad78d1310b2 h1:tRhbehjSCwQSZL7A2AoZlKrDYhZzaPIAcpnhfaUc0Tw=
+github.com/rajveermalviya/go-wayland/wayland v0.0.0-20230130181619-0ad78d1310b2/go.mod h1:PXhW/GoWcMBeiZ39ZdgoMs/xduJEEUE+kxUBB2Kwd+M=
 golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1 h1:kwrAHlwJ0DUBZwQ238v+Uod/3eZ8B2K5rYsUHBQvzmI=
 golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

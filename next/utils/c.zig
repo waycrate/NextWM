@@ -9,4 +9,8 @@ pub usingnamespace @cImport({
     @cDefine("_POSIX_C_SOURCE", "200809L");
     @cInclude("stdlib.h");
     @cInclude("unistd.h");
+    @cInclude("EGL/egl.h");
+    @cInclude("GLES3/gl3.h");
+    @cInclude("GLES3/gl3ext.h");
+    @cInclude("GLES2/gl2ext.h");
 });
