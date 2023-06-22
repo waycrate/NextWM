@@ -24,7 +24,7 @@ uninstall:
 	$(RM) $(PREFIX)/share/pkgconfig/next-protocols.pc
 
 clean:
-	$(MAKE) -C ./nextctl -s $@
+	$(RM) -r ./nextctl/zig-out ./nextctl/zig-cache
 	$(MAKE) -C ./nextctl-go -s $@
 	$(MAKE) -C ./nextctl-rs -s $@
 	$(RM) -r zig-cache zig-out

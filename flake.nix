@@ -2,10 +2,7 @@
   description = "NextWM devel";
 
   inputs = {
-    nixgl = {
-      url = "github:guibou/nixGL";
-    };
-
+    nixgl.url = "github:guibou/nixGL";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   };
 
@@ -18,20 +15,16 @@
         };
 
       targetSystems = [ "aarch64-linux" "x86_64-linux" ];
-    in
-    {
+    in {
       devShells = nixpkgs.lib.genAttrs targetSystems (system:
-        let
-          pkgs = pkgsFor system;
-        in
-        {
+        let pkgs = pkgsFor system;
+        in {
           default = pkgs.mkShell {
             name = "NextWM-devel";
             nativeBuildInputs = with pkgs; [
               # Compilers
               cargo
               clang
-              gnumake
               go
               rustc
               scdoc
@@ -49,12 +42,13 @@
 
               # Tools
               gdb
-              strace
+              rustfmt
+              gnumake
               gopls
               pkg-config
-              pkgs.nixgl.nixGLMesa
+              pkgs.nixgl.nixGLMesa # For non-NixOS users who are using the nix package manager.
               rust-analyzer
-              tmux
+              strace
               valgrind
               wayland-scanner
               zls
