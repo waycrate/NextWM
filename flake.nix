@@ -24,11 +24,11 @@
             nativeBuildInputs = with pkgs; [
               # Compilers
               cargo
-              clang
               go
               rustc
               scdoc
               zig
+              stdenv
 
               # Libs
               libGL
