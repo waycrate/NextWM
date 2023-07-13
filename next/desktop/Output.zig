@@ -53,6 +53,8 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
         };
     }
 
+    //TODO: self.wlr_output.enableAdaptiveSync(true); if config states it.
+
     self.* = .{
         .server = server,
         .wlr_output = wlr_output,
@@ -70,11 +72,22 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
         log.err("Failed to allocate memory.", .{});
         return;
     };
+
+    const output_title = std.fmt.allocPrintZ(allocator, "nextwm - {s}", .{self.wlr_output.name}) catch |e| {
+        log.err("Failed to allocate output name, skipping setting custom output name: {s}", .{@errorName(e)});
+        return;
+    };
+    defer allocator.free(output_title);
+
+    if (self.wlr_output.isWl()) {
+        self.wlr_output.wlSetTitle(output_title);
+    } else if (wlr.config.has_x11_backend and self.wlr_output.isX11()) {
+        self.wlr_output.x11SetTitle(output_title);
+    }
 }
 
 // This callback is called everytime an output is ready to display a frame.
-fn handleFrame(listener: *wl.Listener(*wlr.OutputDamage), _: *wlr.OutputDamage) void {
-    // Get the parent struct, Output.
+fn handleFrame(listener: *wl.Listener(*wlr.OutputDamage), _: *wlr.OutputDamage) void { // Get the parent struct, Output.
     const self = @fieldParentPtr(Self, "frame", listener);
     log.debug("Signal: wlr_output_damage_frame", .{});
 
