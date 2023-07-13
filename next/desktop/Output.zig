@@ -126,3 +126,19 @@ pub fn getGeometry(self: *Self) struct { width: u64, height: u64, x: u64, y: u64
         .y = @floatToInt(u64, y),
     };
 }
+
+pub fn getDescription(self: *Self) [*:0]const u8 {
+    if (self.wlr_output.description) |description| {
+        return description;
+    } else {
+        return "<No output description found>";
+    }
+}
+
+pub fn getMake(self: *Self) [*:0]const u8 {
+    if (self.wlr_output.make) |make| {
+        return make.*;
+    } else {
+        return "<No output make found>";
+    }
+}
