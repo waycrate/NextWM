@@ -31,7 +31,10 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
     log.debug("Initializing output device", .{});
 
     // Configure the output detected by the backend to use our allocator and renderer.
-    if (!wlr_output.initRender(server.wlr_allocator, server.wlr_renderer)) return;
+    if (!wlr_output.initRender(server.wlr_allocator, server.wlr_renderer)) {
+        log.err("Failed to init output render", .{});
+        return;
+    }
 
     // Some backends don't have modes. DRM+KMS does, and we need to set a mode before using the target.
     if (wlr_output.preferredMode()) |preferred_mode| {
