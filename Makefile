@@ -10,7 +10,7 @@ install:
 check:
 	zig fmt --check next/
 	zig fmt --check *.zig
-	$(MAKE) -C ./nextctl -s $@
+	@#$(MAKE) -C ./nextctl -s $@ #TODO: Implement this in nextctl
 	$(MAKE) -C ./nextctl-rs -s $@
 	$(MAKE) -C ./nextctl-go -s $@
 
