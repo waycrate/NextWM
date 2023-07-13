@@ -56,7 +56,7 @@ func main() {
 	}
 
 	Nextctl.registry, _ = Nextctl.display.GetRegistry()
-	Nextctl.registry.AddGlobalHandler(Nextctl.GlobalHandler)
+	Nextctl.registry.SetGlobalHandler(Nextctl.GlobalHandler)
 
 	Nextctl.DisplayDispatch()
 
@@ -90,7 +90,7 @@ func (Nextctl *Nextctl) DisplayDispatch() {
 	}()
 
 	callback_done := false
-	callback.AddDoneHandler(func(_ client.CallbackDoneEvent) {
+	callback.SetDoneHandler(func(_ client.CallbackDoneEvent) {
 		callback_done = true
 	})
 
