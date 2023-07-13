@@ -120,6 +120,10 @@ pub fn init(self: *Self) !void {
 
     // Create the compositor from the server and renderer.
     self.wlr_compositor = try wlr.Compositor.create(self.wl_server, self.wlr_renderer);
+    _ = try wlr.Subcompositor.create(self.wl_server);
+
+    //NOTE: This has to be initialized as one of the first wayland globals inorder to not crash on middle-button paste in gtk3...ugh.
+    _ = try wlr.PrimarySelectionDeviceManagerV1.create(self.wl_server);
 
     // Create foreign toplevel manager
     self.wlr_foreign_toplevel_manager = try wlr.ForeignToplevelManagerV1.create(self.wl_server);
@@ -191,8 +195,8 @@ pub fn init(self: *Self) !void {
     _ = try wlr.DataDeviceManager.create(self.wl_server);
     _ = try wlr.ExportDmabufManagerV1.create(self.wl_server);
     _ = try wlr.GammaControlManagerV1.create(self.wl_server);
-    _ = try wlr.PrimarySelectionDeviceManagerV1.create(self.wl_server);
     _ = try wlr.ScreencopyManagerV1.create(self.wl_server);
+    _ = try wlr.SinglePixelBufferManagerV1.create(self.wl_server);
     _ = try wlr.Viewporter.create(self.wl_server);
 
     try self.control.init();
