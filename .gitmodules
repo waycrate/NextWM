@@ -1,18 +1,24 @@
 [submodule "deps/zig-wayland"]
 	path = deps/zig-wayland
 	url = https://github.com/ifreund/zig-wayland
+	ignore = dirty
 [submodule "deps/zig-pixman"]
 	path = deps/zig-pixman
 	url = https://github.com/ifreund/zig-pixman
+	ignore = dirty
 [submodule "deps/zig-xkbcommon"]
 	path = deps/zig-xkbcommon
 	url = https://github.com/ifreund/zig-xkbcommon
+	ignore = dirty
 [submodule "protocols/wlr-protocols"]
 	path = protocols/wlr-protocols
 	url = https://gitlab.freedesktop.org/wlroots/wlr-protocols
+	ignore = dirty
 [submodule "deps/zig-clap"]
 	path = deps/zig-clap
 	url = https://github.com/Hejsil/zig-clap
+	ignore = dirty
 [submodule "deps/zig-wlroots"]
 	path = deps/zig-wlroots
 	url = https://github.com/swaywm/zig-wlroots.git
+	ignore = dirty
