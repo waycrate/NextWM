@@ -62,7 +62,7 @@ fn pointerDestroy(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.I
     log.debug("Signal: wlr_input_device_destroy (pointer)", .{});
 
     if (std.mem.indexOfScalar(*Self, self.server.cursors.items, self)) |i| {
-        const cursor = self.server.cursors.orderedRemove(i);
+        const cursor = self.server.cursors.swapRemove(i);
         allocator.destroy(cursor);
     }
 
