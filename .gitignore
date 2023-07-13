@@ -2,11 +2,10 @@
 *.o
 next-protocols.pc
 next_control_v1.rs
-nextctl-go/pkg/next_control/next_control_v1.go
 nextctl-go/nextctl
-nextctl/next-control-v1.c
-nextctl/next-control-v1.h
-nextctl/nextctl
+nextctl-go/pkg/next_control/next_control_v1.go
+nextctl/src/next-control-v1.c
+nextctl/include/next-control-v1.h
 target/
 zig-cache
 zig-out

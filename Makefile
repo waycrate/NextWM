@@ -1,5 +1,4 @@
 PREFIX=/usr
-BINDIR=$(PREFIX)/bin
 BUILD_FLAGS = -Drelease-safe
 
 build:

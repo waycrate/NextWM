@@ -8,6 +8,7 @@
 const Self = @This();
 const std = @import("std");
 const allocator = @import("build.zig").allocator;
+const nextctl_c = @import("nextctl/build.zig");
 
 pub const BuildType = enum {
     c,
@@ -19,15 +20,20 @@ builder: *std.build.Builder,
 step: std.build.Step,
 build_type: BuildType,
 version: []const u8,
+target: std.zig.CrossTarget,
+build_mode: std.builtin.Mode,
 
-pub fn create(builder: *std.build.Builder, build_type: BuildType, version: []const u8) !*Self {
+pub fn create(builder: *std.build.Builder, build_type: BuildType, version: []const u8, target: std.zig.CrossTarget, build_mode: std.builtin.Mode) !*Self {
     const self = try allocator.create(Self);
     self.* = .{
         .builder = builder,
         .step = std.build.Step.init(.custom, "Build nextctl", allocator, make),
         .build_type = build_type,
         .version = version,
+        .target = target,
+        .build_mode = build_mode,
     };
+
     return self;
 }
 
@@ -35,8 +41,8 @@ fn make(step: *std.build.Step) !void {
     const self = @fieldParentPtr(Self, "step", step);
     switch (self.build_type) {
         .c => {
-            try syncVersion("#define VERSION ", "nextctl/nextctl.h", self.version);
-            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "make clean nextctl -C ./nextctl" });
+            try syncVersion("#define VERSION ", "nextctl/include/nextctl.h", self.version);
+            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "cd nextctl; zig build" });
         },
         .rust => {
             try syncVersion("version = ", "nextctl-rs/Cargo.toml", self.version);
@@ -53,7 +59,7 @@ pub fn install(self: *Self) !void {
     self.builder.getInstallStep().dependOn(&self.step);
     switch (self.build_type) {
         .c => {
-            self.builder.installFile("./nextctl/nextctl", "bin/nextctl");
+            self.builder.installFile("./nextctl/zig-out/bin/nextctl", "bin/nextctl");
         },
         .rust => {
             self.builder.installFile("./nextctl-rs/target/release/nextctl", "bin/nextctl");
