@@ -2,16 +2,15 @@
   description = "NextWM devel";
 
   inputs = {
-    nixgl.url = "github:guibou/nixGL";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
   };
 
-  outputs = { self, nixpkgs, nixgl, ... }:
+  outputs = { self, nixpkgs, ... }:
     let
       pkgsFor = system:
         import nixpkgs {
           inherit system;
-          overlays = [ nixgl.overlay ];
+          overlays = [ ];
         };
 
       targetSystems = [ "aarch64-linux" "x86_64-linux" ];
@@ -28,26 +27,31 @@
               rustc
               scdoc
               zig
-              stdenv
 
               # Libs
+              hwdata
               libGL
+              libdrm
               libevdev
               libinput
               libxkbcommon
               pixman
+              stdenv
+              udev
               wayland
               wayland-protocols
               wlroots_0_16
 
               # Tools
+              cmake
               gdb
-              rustfmt
               gnumake
               gopls
+              meson
+              ninja
               pkg-config
-              pkgs.nixgl.nixGLMesa # For non-NixOS users who are using the nix package manager.
               rust-analyzer
+              rustfmt
               strace
               valgrind
               wayland-scanner

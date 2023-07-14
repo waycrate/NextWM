@@ -26,6 +26,14 @@ pub fn build(builder: *std.build.Builder) !void {
     const nextctl_rs = builder.option(bool, "nextctl-rs", "If enabled, rust version is built, else C.") orelse false;
     const nextctl_go = builder.option(bool, "nextctl-go", "If enabled, go version is built, else C.") orelse false;
 
+    const scenefx_path = "./deps/scenefx/";
+
+    const so_version_needle = "soversion = ";
+    const new_so_version = 1;
+    const scenefx_meson_file = "meson.build";
+
+    try buildSceneFx(builder, scenefx_path, scenefx_meson_file, so_version_needle, new_so_version);
+
     const exe = builder.addExecutable("next", "next/next.zig");
     exe.setTarget(target);
     exe.setBuildMode(build_mode);
@@ -87,6 +95,7 @@ pub fn build(builder: *std.build.Builder) !void {
         exe.linkSystemLibrary("wayland-server");
         exe.linkSystemLibrary("wlroots");
         exe.linkSystemLibrary("xkbcommon");
+        exe.addObjectFile(std.fmt.comptimePrint("{s}/build/libscenefx.so.{d}", .{ scenefx_path, new_so_version }));
     }
     exe.install();
 
@@ -173,4 +182,33 @@ fn generate_protocol_files(scanner: *ScanProtocolsStep) void {
     scanner.generate("ext_session_lock_manager_v1", 1);
 
     scanner.generate("next_control_v1", 1);
+}
+
+fn buildSceneFx(builder: *std.build.Builder, comptime scenefx_path: []const u8, comptime scenefx_meson_file: []const u8, needle: []const u8, new_version: usize) !void {
+    // Changing soversion.
+    const file_path = scenefx_path;
+    const file_name = file_path ++ scenefx_meson_file;
+
+    const file = try std.fs.cwd().openFile(file_name, .{});
+    const file_size = (try file.stat()).size;
+    const file_buffer = try file.readToEndAlloc(builder.allocator, file_size);
+    defer builder.allocator.free(file_buffer);
+
+    const start_index = std.mem.indexOfPos(u8, file_buffer, 0, needle).? + needle.len;
+    const end_index = std.mem.indexOfPos(u8, file_buffer, start_index + 1, "").? + 1;
+    const old_version = file_buffer[start_index..end_index];
+
+    const old_version_str = try std.fmt.allocPrint(builder.allocator, "{s}{s}\n", .{ needle, old_version });
+    defer builder.allocator.free(old_version_str);
+
+    const new_version_str = try std.fmt.allocPrint(builder.allocator, "{s}{d}\n", .{ needle, new_version });
+    defer builder.allocator.free(new_version_str);
+
+    const replaced_str = try std.mem.replaceOwned(u8, builder.allocator, file_buffer, old_version_str, new_version_str);
+    defer builder.allocator.free(replaced_str);
+
+    try std.fs.cwd().writeFile(file_name, replaced_str);
+
+    // Compiling wlroots
+    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd " ++ scenefx_path ++ "; meson setup build --reconfigure; ninja -C build" });
 }

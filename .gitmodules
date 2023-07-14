@@ -21,3 +21,7 @@
 [submodule "deps/zig-pixman"]
 	path = deps/zig-pixman
 	url = https://github.com/ifreund/zig-pixman
+[submodule "deps/scenefx"]
+	path = deps/scenefx
+	url = https://github.com/wlrfx/scenefx
+    ignore = dirty
