@@ -28,7 +28,7 @@ modifiers: wl.Listener(*wlr.Keyboard) = wl.Listener(*wlr.Keyboard).init(handleMo
 
 destroy: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(handleDestroy),
 
-pub fn init(self: *Self, device: *wlr.InputDevice) void {
+pub fn init(self: *Self, device: *wlr.InputDevice) !void {
     log.debug("Initializing keyboard device", .{});
     self.* = .{
         .server = server,
@@ -40,7 +40,16 @@ pub fn init(self: *Self, device: *wlr.InputDevice) void {
         return;
     };
 
+    const context = xkb.Context.new(.no_flags) orelse return error.XkbContextNewFailed;
+    defer context.unref();
+
+    const keymap = xkb.Keymap.newFromNames(context, null, .no_flags) orelse return error.XkbKeymapCreationFailed;
+    defer keymap.unref();
+
+    _ = self.wlr_keyboard.setKeymap(keymap);
     self.wlr_keyboard.setRepeatInfo(self.server.config.repeat_rate, self.server.config.repeat_delay);
+
+    self.server.seat.wlr_seat.setKeyboard(self.wlr_keyboard);
 
     self.wlr_keyboard.events.key.add(&self.key);
     self.wlr_input_device.events.destroy.add(&self.destroy);
@@ -104,6 +113,10 @@ fn handleCompositorBindings(keysym: xkb.Keysym) bool {
                     };
                 }
             }
+            return true;
+        },
+        xkb.Keysym.j => {
+            server.wl_server.terminate();
             return true;
         },
         else => return false,

@@ -21,19 +21,17 @@ const Server = @import("../Server.zig");
 server: *Server,
 
 wlr_output: *wlr.Output,
-damage: *wlr.OutputDamage,
 
-frame: wl.Listener(*wlr.OutputDamage) = wl.Listener(*wlr.OutputDamage).init(handleFrame),
+frame: wl.Listener(*wlr.Output) = wl.Listener(*wlr.Output).init(handleFrame),
 destroy: wl.Listener(*wlr.Output) = wl.Listener(*wlr.Output).init(handleDestroy),
 
 // This callback prepares the output object to accept listeners.
-pub fn init(self: *Self, wlr_output: *wlr.Output) void {
+pub fn init(self: *Self, wlr_output: *wlr.Output) !void {
     log.debug("Initializing output device", .{});
 
     // Configure the output detected by the backend to use our allocator and renderer.
     if (!wlr_output.initRender(server.wlr_allocator, server.wlr_renderer)) {
-        log.err("Failed to init output render", .{});
-        return;
+        return error.OutputInitRenderFailed;
     }
 
     // Some backends don't have modes. DRM+KMS does, and we need to set a mode before using the target.
@@ -58,19 +56,17 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
     self.* = .{
         .server = server,
         .wlr_output = wlr_output,
-        .damage = wlr.OutputDamage.create(wlr_output) catch return,
     };
 
     self.wlr_output.data = @ptrToInt(&self);
 
     // Add a callback for the frame event from the output struct.
-    self.damage.events.frame.add(&self.frame);
+    self.wlr_output.events.frame.add(&self.frame);
 
     // Add the new output to the output_layout for automatic layout management by wlroots.
     self.server.output_layout.wlr_output_layout.addAuto(self.wlr_output);
     self.server.outputs.append(allocator, self) catch {
-        log.err("Failed to allocate memory.", .{});
-        return;
+        return error.OOM;
     };
 
     const output_title = std.fmt.allocPrintZ(allocator, "nextwm - {s}", .{self.wlr_output.name}) catch |e| {
@@ -87,9 +83,9 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) void {
 }
 
 // This callback is called everytime an output is ready to display a frame.
-fn handleFrame(listener: *wl.Listener(*wlr.OutputDamage), _: *wlr.OutputDamage) void { // Get the parent struct, Output.
+fn handleFrame(listener: *wl.Listener(*wlr.Output), _: *wlr.Output) void { // Get the parent struct, Output.
     const self = @fieldParentPtr(Self, "frame", listener);
-    log.debug("Signal: wlr_output_damage_frame", .{});
+    log.debug("Signal: wlr_output_frame", .{});
 
     // Get the scene output with respect to the wlr.Output object that's being passed.
     const scene_output = self.server.wlr_scene.getSceneOutput(self.wlr_output).?;

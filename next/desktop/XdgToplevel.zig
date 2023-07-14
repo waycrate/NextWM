@@ -28,7 +28,7 @@ popups: std.ArrayListUnmanaged(*XdgPopup) = .{},
 
 geometry: wlr.Box = undefined,
 draw_borders: bool = true,
-scene: *wlr.SceneTree = undefined,
+scene_tree: *wlr.SceneTree = undefined,
 scene_surface: *wlr.SceneTree = undefined,
 
 map: wl.Listener(void) = wl.Listener(void).init(handleMap),
@@ -78,19 +78,19 @@ pub fn handleMap(listener: *wl.Listener(void)) void {
     // TODO: Check if view wants to be fullscreen then make it fullscreen.
 
     // Setting some struct fields we will need later
-    self.scene = server.layer_tile.createSceneTree() catch return;
-    self.scene.node.setEnabled(false);
+    self.scene_tree = server.layer_tile.createSceneTree() catch return;
+    self.scene_tree.node.setEnabled(true);
 
     // TODO: This should handle our resize logic primarily
     //xdg_surface.surface.events.commit.add();
 
-    self.scene_surface = self.scene.createSceneXdgSurface(self.xdg_surface) catch return;
+    self.scene_surface = self.scene_tree.createSceneXdgSurface(self.xdg_surface) catch return;
     self.xdg_surface.getGeometry(&self.geometry);
 
     // Looping over 4 times to create the top, bottom, left, and right borders.
     comptime var j: usize = 0;
     inline while (j <= 3) : (j += 1) {
-        self.borders[j] = self.scene.createSceneRect(0, 0, &server.config.border_color) catch return;
+        self.borders[j] = self.scene_tree.createSceneRect(0, 0, &server.config.border_color) catch return;
     }
 
     // If the client can have csd then why draw servide side borders?
@@ -188,7 +188,7 @@ pub fn resize(self: *Self, x: c_int, y: c_int, width: c_int, height: c_int) void
         self.borders[3].setSize(border_width, self.geometry.height - 2 * border_width);
         self.borders[3].node.setPosition(self.geometry.width - border_width, border_width);
     }
-    self.scene.node.setPosition(self.geometry.x, self.geometry.y);
+    self.scene_tree.node.setPosition(self.geometry.x, self.geometry.y);
     self.scene_surface.node.setPosition(border_width, border_width);
 
     self.updateSize(width, height);

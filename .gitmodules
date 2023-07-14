@@ -2,10 +2,6 @@
 	path = deps/zig-wayland
 	url = https://github.com/ifreund/zig-wayland
 	ignore = dirty
-[submodule "deps/zig-pixman"]
-	path = deps/zig-pixman
-	url = https://github.com/ifreund/zig-pixman
-	ignore = dirty
 [submodule "deps/zig-xkbcommon"]
 	path = deps/zig-xkbcommon
 	url = https://github.com/ifreund/zig-xkbcommon
@@ -22,3 +18,6 @@
 	path = deps/zig-wlroots
 	url = https://github.com/swaywm/zig-wlroots.git
 	ignore = dirty
+[submodule "deps/zig-pixman"]
+	path = deps/zig-pixman
+	url = https://github.com/ifreund/zig-pixman

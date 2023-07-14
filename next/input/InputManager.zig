@@ -56,7 +56,11 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
             };
             errdefer allocator.destroy(keyboard);
 
-            keyboard.init(input_device);
+            keyboard.init(input_device) catch |err| {
+                log.err("Failed to initialize keyboard device: {s}", .{@errorName(err)});
+                allocator.destroy(keyboard);
+                return;
+            };
         },
         .pointer => {
             const pointer = allocator.create(Cursor) catch {

@@ -92,7 +92,7 @@ pub fn handleDestroy(self: *Self) void {
             for (xdg_toplevel.borders) |border| {
                 border.node.destroy();
             }
-            xdg_toplevel.scene.node.destroy();
+            xdg_toplevel.scene_tree.node.destroy();
         },
     }
     if (std.mem.indexOfScalar(*Self, self.server.mapped_windows.items, self)) |i| {

@@ -345,7 +345,11 @@ fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
     errdefer allocator.free(output);
 
     // Instantiate the output struct.
-    output.init(wlr_output);
+    output.init(wlr_output) catch |err| {
+        log.err("Failed to create output: {s}", .{@errorName(err)});
+        allocator.destroy(output);
+        return;
+    };
 }
 
 // This callback is called when a new xdg toplevel is created ( xdg toplevels are basically application windows. )
