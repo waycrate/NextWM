@@ -29,11 +29,13 @@
               zig
 
               # Libs
+              cairo
               hwdata
               libGL
               libdrm
               libevdev
               libinput
+              libjpeg
               libxkbcommon
               pixman
               stdenv

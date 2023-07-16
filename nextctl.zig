@@ -72,6 +72,8 @@ pub fn install(self: *Self) !void {
 
 fn syncVersion(needle: []const u8, file_name: []const u8, new_version: []const u8) !void {
     const file = try std.fs.cwd().openFile(file_name, .{});
+    defer file.close();
+
     const file_size = (try file.stat()).size;
     const file_buffer = try file.readToEndAlloc(allocator, file_size);
     defer allocator.free(file_buffer);

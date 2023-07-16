@@ -69,7 +69,11 @@ fn newInput(listener: *wl.Listener(*wlr.InputDevice), input_device: *wlr.InputDe
             };
             errdefer allocator.destroy(pointer);
 
-            pointer.init(input_device);
+            pointer.init(input_device) catch |err| {
+                log.err("Failed to initialize cursor device: {s}", .{@errorName(err)});
+                allocator.destroy(pointer);
+                return;
+            };
         },
         else => {
             return;

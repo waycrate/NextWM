@@ -11,16 +11,30 @@ const allocator = @import("../utils/allocator.zig").allocator;
 const log = std.log.scoped(.Output);
 const os = std.os;
 const server = &@import("../next.zig").server;
+const c = @import("../utils/c.zig");
 const std = @import("std");
 
 const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Server = @import("../Server.zig");
+const Wallpaper = @import("Wallpaper.zig");
+
+pub const WallpaperMode = enum {
+    fit,
+    stretch,
+};
 
 server: *Server,
 
 wlr_output: *wlr.Output,
+
+background_image_surface: ?*c.cairo_surface_t = null,
+
+has_wallpaper: bool = false,
+wallpaper: ?*Wallpaper = null,
+wallpaper_path: ?[]const u8 = null,
+wallpaper_mode: ?WallpaperMode = null,
 
 frame: wl.Listener(*wlr.Output) = wl.Listener(*wlr.Output).init(handleFrame),
 destroy: wl.Listener(*wlr.Output) = wl.Listener(*wlr.Output).init(handleDestroy),
@@ -82,6 +96,61 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) !void {
     }
 }
 
+pub fn init_wallpaper_rendering(self: *Self) !void {
+    // We do some cleanup first.
+    const wallpaper_path = allocator.dupe(u8, self.wallpaper_path.?) catch return error.OOM;
+
+    self.deinit_wallpaper();
+    self.wallpaper_path = wallpaper_path;
+
+    const image_surface = try Wallpaper.cairo_load_image(self.wallpaper_path.?);
+    errdefer c.cairo_surface_destroy(image_surface);
+
+    const output_geometry = self.getGeometry();
+
+    self.background_image_surface = try Wallpaper.cairo_surface_transform_apply(image_surface, self.wallpaper_mode.?, output_geometry.width, output_geometry.height);
+
+    const data = c.cairo_image_surface_get_data(self.background_image_surface);
+    const stride = c.cairo_image_surface_get_stride(self.background_image_surface);
+
+    self.wallpaper = allocator.create(Wallpaper) catch {
+        log.debug("Failed to allocate memory", .{});
+        log.debug("Skipping wallpaper setting", .{});
+        return error.OOM;
+    };
+
+    try self.wallpaper.?.cairo_buffer_create(@intCast(c_int, output_geometry.width), @intCast(c_int, output_geometry.height), @intCast(usize, stride), data);
+    errdefer allocator.destroy(self.wallpaper.?);
+
+    self.wallpaper.?.scene_buffer = try self.server.layer_bg.createSceneBuffer(&self.wallpaper.?.base_buffer);
+    self.wallpaper.?.scene_buffer.?.node.setPosition(@intCast(c_int, output_geometry.x), @intCast(c_int, output_geometry.y));
+}
+
+pub fn deinit_wallpaper(self: *Self) void {
+    if (self.wallpaper) |wallpaper| {
+        if (wallpaper.scene_buffer) |scene_buffer| {
+            scene_buffer.node.destroy();
+        }
+
+        if (!wallpaper.base_buffer.dropped) {
+            log.warn("Wallpaper deinit called before wlr_buffer_destroy", .{});
+            wallpaper.base_buffer.drop();
+        }
+
+        allocator.destroy(wallpaper);
+        if (self.wallpaper_path) |path| {
+            allocator.free(path);
+            self.wallpaper_path = null;
+        }
+        self.wallpaper = null;
+    }
+
+    if (self.background_image_surface) |surface| {
+        c.cairo_surface_destroy(surface);
+        self.background_image_surface = null;
+    }
+}
+
 // This callback is called everytime an output is ready to display a frame.
 fn handleFrame(listener: *wl.Listener(*wlr.Output), _: *wlr.Output) void { // Get the parent struct, Output.
     const self = @fieldParentPtr(Self, "frame", listener);
@@ -105,13 +174,12 @@ fn handleFrame(listener: *wl.Listener(*wlr.Output), _: *wlr.Output) void { // Ge
 }
 
 // This callback is called everytime an output is unplugged.
-fn handleDestroy(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
+fn handleDestroy(listener: *wl.Listener(*wlr.Output), _: *wlr.Output) void {
     // Get the parent struct, Output.
     const self = @fieldParentPtr(Self, "destroy", listener);
     log.debug("Signal: wlr_output_destroy", .{});
 
-    // Remove the output from the global compositor output layout.
-    self.server.output_layout.wlr_output_layout.remove(wlr_output);
+    self.deinit();
 
     // Find index of self from outputs and remove it.
     if (std.mem.indexOfScalar(*Self, self.server.outputs.items, self)) |i| {
@@ -119,6 +187,15 @@ fn handleDestroy(listener: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) v
         allocator.destroy(output);
     }
     //TODO: Move closed monitors clients to focused one.
+}
+
+pub fn deinit(self: *Self) void {
+    //TODO: Check if all such cases are handled in server cleanup and then in the handleDestroy.
+    // Free all wallpaper surfaces and cairo objects.
+    self.deinit_wallpaper();
+
+    // Remove the output from the global compositor output layout.
+    self.server.output_layout.wlr_output_layout.remove(self.wlr_output);
 }
 
 // Helper to get X, Y coordinates and the width and height of the output.
@@ -153,4 +230,9 @@ pub fn getMake(self: *Self) [*:0]const u8 {
     } else {
         return "<No output make found>";
     }
+}
+
+pub fn getName(self: *Self) []const u8 {
+    const name = self.wlr_output.name;
+    return std.mem.span(name);
 }

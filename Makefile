@@ -1,5 +1,5 @@
 PREFIX=/usr
-BUILD_FLAGS = -Drelease-safe
+BUILD_FLAGS =
 
 build:
 	zig build $(BUILD_FLAGS)
@@ -29,6 +29,7 @@ clean:
 	$(RM) -r ./nextctl/zig-cache ./nextctl/zig-out
 	$(RM) -r zig-cache zig-out
 	$(RM) ./docs/*.gz
+	$(RM) -r ./deps/scenefx/build
 	$(RM) *.pc
 
 

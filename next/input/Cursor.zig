@@ -10,6 +10,7 @@ const Self = @This();
 const std = @import("std");
 const allocator = @import("../utils/allocator.zig").allocator;
 const server = &@import("../next.zig").server;
+const c = @import("../utils/c.zig");
 const log = std.log.scoped(.Cursor);
 
 const wl = @import("wayland").server.wl;
@@ -20,6 +21,7 @@ const Server = @import("../Server.zig");
 server: *Server,
 
 wlr_input_device: *wlr.InputDevice,
+wlr_pointer: *wlr.Pointer,
 
 axis: wl.Listener(*wlr.Pointer.event.Axis) = wl.Listener(*wlr.Pointer.event.Axis).init(handleAxis),
 button: wl.Listener(*wlr.Pointer.event.Button) = wl.Listener(*wlr.Pointer.event.Button).init(handleButton),
@@ -29,13 +31,36 @@ motion_absolute: wl.Listener(*wlr.Pointer.event.MotionAbsolute) = wl.Listener(*w
 
 pointer_destroy: wl.Listener(*wlr.InputDevice) = wl.Listener(*wlr.InputDevice).init(pointerDestroy),
 
-pub fn init(self: *Self, device: *wlr.InputDevice) void {
+pub fn init(self: *Self, device: *wlr.InputDevice) !void {
     log.debug("Initializing pointer device", .{});
 
     self.* = .{
         .server = server,
         .wlr_input_device = device,
+        .wlr_pointer = device.toPointer(),
     };
+
+    if (self.wlr_input_device.isLibinput()) {
+        //const libinput_device = @ptrCast(*c.libinput_device, self.wlr_input_device.getLibinputDevice().?);
+
+        //if (c.libinput_device_config_tap_get_finger_count(libinput_device) > 0) {
+        //c.libinput_device_config_tap_set_enabled(libinput_device, 1);
+        //c.libinput_device_config_tap_set_drag_enabled(libinput_device, 1);
+        //c.libinput_device_config_tap_set_drag_lock_enabled(libinput_device, 1);
+        //c.libinput_device_config_tap_set_button_map(libinput_device, c.LIBINPUT_CONFIG_TAP_MAP_LRM);
+        //}
+
+        //if (c.libinput_device_config_scroll_has_natural_scroll(libinput_device)) {
+        //c.libinput_device_config_scroll_set_natural_scroll_enabled(libinput_device, 0);
+        //}
+
+        //if (c.libinput_device_config_dwt_is_available(libinput_device)) {
+        //c.libinput_device_config_dwt_set_enabled(libinput_device, 1);
+        //}
+
+        //TODO: More libinput config_required.
+        // This is probably generic for any kind of device and can be a global function in the InputManager / InputConfig namespace.
+    }
 
     // These listeners only need to be registered once against the wlr_cursor.
     if (self.server.cursors.items.len == 0) {
@@ -47,8 +72,7 @@ pub fn init(self: *Self, device: *wlr.InputDevice) void {
     }
 
     self.server.cursors.append(allocator, self) catch {
-        log.err("Failed to allocate memory", .{});
-        return;
+        return error.OOM;
     };
     //TODO: We should modify the pointer libinput object here to support features such as tap to click.
 
@@ -98,9 +122,15 @@ pub fn handleFrame(listener: *wl.Listener(*wlr.Cursor), _: *wlr.Cursor) void {
     self.server.seat.wlr_seat.pointerNotifyFrame();
 }
 
-//TODO: Finish these!
-pub fn handleMotion(_: *wl.Listener(*wlr.Pointer.event.Motion), _: *wlr.Pointer.event.Motion) void {
+//TODO: Finish this.
+pub fn handleMotion(listener: *wl.Listener(*wlr.Pointer.event.Motion), event: *wlr.Pointer.event.Motion) void {
+    const self = @fieldParentPtr(Self, "motion", listener);
     log.debug("Signal: wlr_cursor_motion", .{});
+
+    self.server.wlr_cursor.move(event.device, event.delta_x, event.delta_y);
+
+    //TODO: Process the cursor movement now.
+    self.server.wlr_xcursor_manager.setCursorImage("left_ptr", self.server.wlr_cursor);
 }
 
 pub fn handleMotionAbsolute(_: *wl.Listener(*wlr.Pointer.event.MotionAbsolute), _: *wlr.Pointer.event.MotionAbsolute) void {

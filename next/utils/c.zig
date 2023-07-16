@@ -8,6 +8,12 @@
 pub usingnamespace @cImport({
     @cDefine("_POSIX_C_SOURCE", "200809L");
     @cInclude("stdlib.h");
+    @cInclude("sys/stat.h");
+    @cInclude("fcntl.h");
     @cInclude("unistd.h");
     @cInclude("libinput.h");
+    @cInclude("cairo.h");
+    @cInclude("stdio.h"); // Required by jpeglib.h
+    @cInclude("jpeglib.h");
+    @cInclude("drm_fourcc.h");
 });

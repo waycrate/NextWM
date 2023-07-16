@@ -148,6 +148,9 @@ pub fn init(self: *Self) !void {
     self.wlr_xcursor_manager = try wlr.XcursorManager.create(null, default_cursor_size);
     errdefer self.wlr_xcursor_manager.destroy();
 
+    // Load cursors at scale factor 1.
+    try self.wlr_xcursor_manager.load(1);
+
     // Creating a xdg_shell which is a wayland protocol for application windows.
     self.wlr_xdg_shell = try wlr.XdgShell.create(self.wl_server, 5);
 
@@ -249,9 +252,6 @@ pub fn start(self: *Self) !void {
     if (build_options.xwayland) {
         log.info("Xwayland initialized at {s}", .{self.wlr_xwayland.display_name});
     }
-
-    log.info("Setting cursor image to left_ptr", .{});
-    self.wlr_xcursor_manager.setCursorImage("left_ptr", self.wlr_cursor);
 }
 
 pub fn deinit(self: *Self) void {
@@ -280,8 +280,9 @@ pub fn deinit(self: *Self) void {
     }
     self.pending_windows.deinit(allocator);
 
-    for (self.outputs.items) |item| {
-        allocator.destroy(item);
+    for (self.outputs.items) |output| {
+        output.deinit();
+        allocator.destroy(output);
     }
     self.outputs.deinit(allocator);
 
@@ -294,6 +295,8 @@ pub fn deinit(self: *Self) void {
         allocator.destroy(item);
     }
     self.keyboards.deinit(allocator);
+
+    self.wlr_scene.tree.node.destroy();
 
     self.wlr_cursor.destroy();
     self.wlr_xcursor_manager.destroy();
@@ -345,6 +348,8 @@ fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
     errdefer allocator.free(output);
 
     // Instantiate the output struct.
+    // TODO: Reminder to use this pattern and clean up similar memory leaks.
+    // TODO: use destroy instead of free for objects on heap, check all calls of free or destroy.
     output.init(wlr_output) catch |err| {
         log.err("Failed to create output: {s}", .{@errorName(err)});
         allocator.destroy(output);

@@ -34,8 +34,20 @@ pub fn deinit(self: *Self) void {
     self.wlr_output_layout.destroy();
 }
 
-fn layoutChange(_: *wl.Listener(*wlr.OutputLayout), _: *wlr.OutputLayout) void {
+fn layoutChange(listener: *wl.Listener(*wlr.OutputLayout), _: *wlr.OutputLayout) void {
+    _ = @fieldParentPtr(Self, "layout_change", listener);
     log.debug("Signal: wlr_output_layout_layout_change", .{});
+
+    // Everytime an output is resized / added / removed, we redo wallpaper rendering.
+    // This is probably not efficient but without it in nested sessions, if wlr_output is resized, the wallpaper doesn't get resized accordingly.
+    for (server.outputs.items) |output| {
+        if (output.has_wallpaper) {
+            output.init_wallpaper_rendering() catch |err| {
+                log.err("Error occured: {s}", .{@errorName(err)});
+                log.err("Skipping wallpaper setting.", .{});
+            };
+        }
+    }
 
     //TODO: Finish this!
     //TODO: Take windows from deactivated monitors and rearrange them.

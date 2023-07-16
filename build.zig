@@ -89,8 +89,12 @@ pub fn build(builder: *std.build.Builder) !void {
     // Links:
     {
         exe.linkLibC();
+        exe.linkSystemLibrary("cairo");
+        exe.linkSystemLibrary("libdrm");
         exe.linkSystemLibrary("libevdev");
         exe.linkSystemLibrary("libinput");
+        exe.linkSystemLibrary("libturbojpeg");
+        exe.linkSystemLibrary("libjpeg");
         exe.linkSystemLibrary("pixman-1");
         exe.linkSystemLibrary("wayland-server");
         exe.linkSystemLibrary("wlroots");
@@ -190,6 +194,8 @@ fn buildSceneFx(builder: *std.build.Builder, comptime scenefx_path: []const u8, 
     const file_name = file_path ++ scenefx_meson_file;
 
     const file = try std.fs.cwd().openFile(file_name, .{});
+    defer file.close();
+
     const file_size = (try file.stat()).size;
     const file_buffer = try file.readToEndAlloc(builder.allocator, file_size);
     defer builder.allocator.free(file_buffer);
@@ -210,5 +216,5 @@ fn buildSceneFx(builder: *std.build.Builder, comptime scenefx_path: []const u8, 
     try std.fs.cwd().writeFile(file_name, replaced_str);
 
     // Compiling wlroots
-    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd " ++ scenefx_path ++ "; meson setup build --reconfigure; ninja -C build" });
+    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd " ++ scenefx_path ++ "; meson setup build --reconfigure -Dwerror=false; ninja -C build" });
 }

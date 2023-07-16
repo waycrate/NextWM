@@ -9,10 +9,10 @@ const std = @import("std");
 const assert = std.debug.assert;
 
 const border = @import("border.zig");
-const cursor = @import("cursor.zig");
-const inputs = @import("inputs.zig");
 const csd = @import("csd.zig");
+const cursor = @import("cursor.zig");
 const exit = @import("exit.zig");
+const inputs = @import("inputs.zig");
 const outputs = @import("outputs.zig");
 
 pub const Error = error{
@@ -28,6 +28,7 @@ pub const Error = error{
 const commands = std.ComptimeStringMap(
     *const fn ([]const [:0]const u8, *?[]const u8) Error!void,
     .{
+        .{ "wallpaper",                     outputs.setWallpaper     },
         .{ "border-width",                  border.setWidth          },
         // TODO: This is just a catch all. We will create border-focused, border-unfocused, etc soon.
         .{ "border-color",                  border.setColor          },
