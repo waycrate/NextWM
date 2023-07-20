@@ -30,6 +30,7 @@
 
               # Libs
               cairo
+              mesa
               hwdata
               libGL
               libdrm

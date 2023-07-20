@@ -216,5 +216,5 @@ fn buildSceneFx(builder: *std.build.Builder, comptime scenefx_path: []const u8, 
     try std.fs.cwd().writeFile(file_name, replaced_str);
 
     // Compiling wlroots
-    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd " ++ scenefx_path ++ "; meson setup build --reconfigure -Dwerror=false; ninja -C build" });
+    _ = try builder.exec(&[_][]const u8{ "sh", "-c", "cd " ++ scenefx_path ++ "; meson setup build --auto-features enabled --reconfigure -Dwerror=false; ninja -C build" });
 }

@@ -50,6 +50,7 @@ seat: *Seat,
 
 // Layers
 layer_bg: *wlr.SceneTree,
+layer_fullscreen: *wlr.SceneTree,
 layer_bottom: *wlr.SceneTree,
 layer_float: *wlr.SceneTree,
 layer_nofocus: *wlr.SceneTree,
@@ -91,6 +92,8 @@ wlr_xdg_activation_v1: *wlr.XdgActivationV1,
 request_activate: wl.Listener(*wlr.XdgActivationV1.event.RequestActivate),
 
 pub fn init(self: *Self) !void {
+    logInfo();
+
     // Creating the server itself.
     self.wl_server = try wl.Server.create();
     errdefer self.wl_server.destroy();
@@ -170,6 +173,7 @@ pub fn init(self: *Self) !void {
 
     // Creating toplevel layers:
     self.layer_bg = try self.wlr_scene.tree.createSceneTree();
+    self.layer_fullscreen = try self.wlr_scene.tree.createSceneTree(); // Used for direct_scanout.
     self.layer_bottom = try self.wlr_scene.tree.createSceneTree();
     self.layer_float = try self.wlr_scene.tree.createSceneTree();
     self.layer_nofocus = try self.wlr_scene.tree.createSceneTree();
@@ -281,7 +285,7 @@ pub fn deinit(self: *Self) void {
     self.pending_windows.deinit(allocator);
 
     for (self.outputs.items) |output| {
-        output.deinit();
+        output.deinit_wallpaper();
         allocator.destroy(output);
     }
     self.outputs.deinit(allocator);
@@ -368,11 +372,16 @@ fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgS
     const self = @fieldParentPtr(Self, "new_xdg_surface", listener);
     log.debug("Signal: wlr_xdg_shell_new_surface", .{});
     if (xdg_surface.role == .toplevel) {
-        XdgToplevel.init(self.seat.focused_output, xdg_surface) catch {
-            log.err("Failed to allocate memory", .{});
-            xdg_surface.resource.postNoMemory();
+        if (self.seat.focused_output) |output| {
+            XdgToplevel.init(output, xdg_surface) catch {
+                log.err("Failed to allocate memory", .{});
+                xdg_surface.resource.postNoMemory();
+                return;
+            };
+        } else {
+            log.err("No focused wlr_output found. Skipping xdg_toplevel.", .{});
             return;
-        };
+        }
     }
 }
 
@@ -448,4 +457,12 @@ fn setMode(listener: *wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode), even
         },
         _ => {},
     }
+}
+
+fn logInfo() void {
+    const uname_info = std.os.uname();
+    std.log.info("System name: {s}", .{uname_info.sysname});
+    std.log.info("Host name: {s}", .{uname_info.nodename});
+    std.log.info("Release Info: {s}", .{uname_info.release});
+    std.log.info("Version Info: {s}", .{uname_info.version});
 }

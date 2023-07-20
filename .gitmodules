@@ -24,4 +24,4 @@
 [submodule "deps/scenefx"]
 	path = deps/scenefx
 	url = https://github.com/wlrfx/scenefx
-    ignore = dirty
+	ignore = dirty

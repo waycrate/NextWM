@@ -94,6 +94,11 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) !void {
     } else if (wlr.config.has_x11_backend and self.wlr_output.isX11()) {
         self.wlr_output.x11SetTitle(output_title);
     }
+
+    // If focused_output is null, we become the new focused_output :)
+    if (self.server.seat.focused_output) |_| {} else {
+        self.server.seat.focusOutput(self);
+    }
 }
 
 pub fn init_wallpaper_rendering(self: *Self) !void {
@@ -180,22 +185,32 @@ fn handleDestroy(listener: *wl.Listener(*wlr.Output), _: *wlr.Output) void {
     log.debug("Signal: wlr_output_destroy", .{});
 
     self.deinit();
-
-    // Find index of self from outputs and remove it.
-    if (std.mem.indexOfScalar(*Self, self.server.outputs.items, self)) |i| {
-        const output = self.server.outputs.swapRemove(i);
-        allocator.destroy(output);
-    }
-    //TODO: Move closed monitors clients to focused one.
 }
 
 pub fn deinit(self: *Self) void {
+    log.err("Deinitializing output: {s}", .{self.getName()});
+
     //TODO: Check if all such cases are handled in server cleanup and then in the handleDestroy.
     // Free all wallpaper surfaces and cairo objects.
     self.deinit_wallpaper();
 
     // Remove the output from the global compositor output layout.
     self.server.output_layout.wlr_output_layout.remove(self.wlr_output);
+
+    // Find index of self from outputs and remove it.
+    if (std.mem.indexOfScalar(*Self, self.server.outputs.items, self)) |i| {
+        log.err("Removing output from server output array", .{});
+
+        allocator.destroy(self.server.outputs.swapRemove(i));
+    }
+
+    //TODO: Move closed monitors clients to focused one.
+    if (self.server.seat.focused_output) |focused_output| {
+        if (focused_output.wlr_output == self.wlr_output) {
+            // Unset focused output. It will be reset in output_layout_change as destroying a monitor does emit that event.
+            self.server.seat.focused_output = null;
+        }
+    }
 }
 
 // Helper to get X, Y coordinates and the width and height of the output.

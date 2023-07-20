@@ -38,6 +38,9 @@ set_app_id: wl.Listener(void) = wl.Listener(void).init(setAppId),
 new_popup: wl.Listener(*wlr.XdgPopup) = wl.Listener(*wlr.XdgPopup).init(newPopup),
 set_title: wl.Listener(void) = wl.Listener(void).init(setTitle),
 
+// Listeners that are only active while the window is mapped.
+commit: wl.Listener(*wlr.Surface) = wl.Listener(*wlr.Surface).init(handleCommit),
+
 pub fn init(focused_output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMemory}!void {
     log.debug("New xdg_shell toplevel received: title=\"{s}\" app_id=\"{s}\"", .{
         getXdgSurfaceTitle(xdg_surface),
@@ -82,7 +85,7 @@ pub fn handleMap(listener: *wl.Listener(void)) void {
     self.scene_tree.node.setEnabled(true);
 
     // TODO: This should handle our resize logic primarily
-    //xdg_surface.surface.events.commit.add();
+    self.xdg_surface.surface.events.commit.add(&self.commit);
 
     self.scene_surface = self.scene_tree.createSceneXdgSurface(self.xdg_surface) catch return;
     self.xdg_surface.getGeometry(&self.geometry);
@@ -105,8 +108,6 @@ pub fn handleMap(listener: *wl.Listener(void)) void {
     } else {
         _ = self.xdg_surface.role_data.toplevel.setTiled(.{ .top = true, .bottom = true, .left = true, .right = true });
     }
-
-    self.resize(self.geometry.x, self.geometry.y, self.geometry.width, self.geometry.height);
 
     self.window.wlr_foreign_toplevel_handle = wlr.ForeignToplevelHandleV1.create(server.wlr_foreign_toplevel_manager) catch {
         log.err("Failed to create foreign_toplevel_handle", .{});
@@ -134,6 +135,23 @@ pub fn handleMap(listener: *wl.Listener(void)) void {
         return;
     };
     log.debug("Window '{s}' mapped", .{self.getTitle()});
+}
+
+pub fn handleCommit(listener: *wl.Listener(*wlr.Surface), _: *wlr.Surface) void {
+    const self = @fieldParentPtr(Self, "commit", listener);
+    log.debug("Signal: wlr_xdg_surface_commit", .{});
+
+    //TODO: Instead of constantly resizing on each commit, check if a resize is needed by setting a flag
+    //
+    // Or check if the surface wants a resize by checking it's geometry? Look at what others do here.
+
+    const geom = self.window.output.getGeometry();
+    self.window.backend.xdg_toplevel.resize(
+        @intCast(c_int, geom.x),
+        @intCast(c_int, geom.y),
+        @intCast(c_int, geom.width),
+        @intCast(c_int, geom.height),
+    );
 }
 
 pub fn newPopup(listener: *wl.Listener(*wlr.XdgPopup), xdg_popup: *wlr.XdgPopup) void {

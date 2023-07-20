@@ -25,8 +25,10 @@ Since this project is meant to teach others, why not show people how wayland cli
 
 ## To-Do
 
-Compress man pages using zig stdlib
-Simple wallpaper setting per output. For complex use cases user external tools.
+- Compress man pages using zig stdlib.
+- Simple inbuilt bar.
+- Toplevel location data export?
+- focused_wlr_output and focused_toplevel data export?
 
 ## Building
 

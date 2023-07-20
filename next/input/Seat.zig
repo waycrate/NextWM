@@ -31,7 +31,7 @@ wlr_seat: *wlr.Seat,
 pointer_drag: bool = false,
 
 // Currently focused wl_output
-focused_output: *Output = undefined,
+focused_output: ?*Output = null,
 
 // Currently focused window.
 focused_window: FocusTarget = .none,
@@ -107,13 +107,20 @@ pub fn setFocus(self: *Self, window: *Window) void {
 }
 
 pub fn focusOutput(self: *Self, output: *Output) void {
-    if (self.focused_output == output or output == undefined) return;
+    if (self.focused_output) |focused_output| {
+        if (focused_output == output) {
+            log.err("Attempted to focus on already focused_output. Skipping.", .{});
+            return;
+        }
+    }
     self.focused_output = output;
     log.debug("Focusing on output.", .{});
     // TODO: finish this.
 
     if (self.server.config.warp_cursor == .@"on-output-change") {
-        const layout_box = self.server.wlr_output_layout.getBox(self.focused_output.wlr_output).?;
+        var layout_box: wlr.Box = undefined;
+        self.server.output_layout.wlr_output_layout.getBox(self.focused_output.?.wlr_output, &layout_box);
+
         if (!layout_box.containsPoint(self.server.wlr_cursor.x, self.server.wlr_cursor.y)) {
             const geometry = output.getGeometry();
 
