@@ -5,6 +5,7 @@ Manual tiling wayland compositor written with wlroots aimed to be a bspwm clone.
 Note: NextWM is still a work in progress project. It won't be useable anytime soon, but when it is I will be the first one to spam screenshots of it in the readme.
 
 <p align=center>
+    <a href="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/nix.yml"><img src="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/nix.yml.svg"</a>
     <a href="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/alpine.yml"><img src="https://builds.sr.ht/~shinyzenith/NextWM/commits/master/alpine.yml.svg"</a>
     <a href="https://github.com/waycrate/NextWM/actions"><img src="https://github.com/waycrate/nextwm/actions/workflows/arch.yaml/badge.svg"></a>
 </p>

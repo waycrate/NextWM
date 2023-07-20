@@ -1,0 +1,26 @@
+image: nixos/unstable
+
+repositories:
+  nixpkgs: https://nixos.org/channels/nixpkgs-unstable
+
+environment:
+  NIX_CONFIG: "experimental-features = nix-command flakes"
+
+sources:
+    - https://git.sr.ht/~shinyzenith/NextWM
+
+tasks:
+    - build: |
+          cd NextWM; nix develop --command make
+
+    - build-xwayland: |
+          cd NextWM; nix develop --command make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy"
+
+    - build-rs: |
+          cd NextWM; nix develop --command make -C ./nextctl-rs
+
+    - build-go: |
+          cd NextWM; nix develop --command make -C ./nextctl-go
+
+    - fmt: |
+          cd NextWM; nix develop --command make check
