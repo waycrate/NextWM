@@ -26,16 +26,16 @@ jobs:
 
             - name: Build NextWM-Xwayland
               run: |
-                  nix develop --command 'make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy"'
+                  nix develop --command make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy"
 
             - name: Build Nextctl-rs
               run: |
-                  nix develop --command 'make -C ./nextctl-rs'
+                  nix develop --command make -C ./nextctl-rs
 
             - name: Build Nextctl-go
               run: |
-                  nix develop --command 'make BUILD_FLAGS="-buildvcs=false" -C ./nextctl-go'
+                  nix develop --command make BUILD_FLAGS="-buildvcs=false" -C ./nextctl-go
 
             - name: Formatting Check
               run: |
-                  nix develop --command 'make check'
+                  nix develop --command make check
