@@ -64,29 +64,22 @@ fn cairo_load_png(path: []const u8) !*c.cairo_surface_t {
 }
 
 fn cairo_load_jpg(path: []const u8) !*c.cairo_surface_t {
-    var stat: c.struct_stat = undefined;
-
     var jpeg_error: c.jpeg_error_mgr = undefined;
     var jpeg_info: c.jpeg_decompress_struct = undefined;
 
-    var fd = c.open(path.ptr, 0 | c.O_RDONLY);
-    defer _ = c.close(fd);
+    const fd = @intCast(c_int, try std.os.open(path, 0 | std.os.O.RDONLY, undefined));
+    defer _ = std.os.close(fd);
 
-    if (fd == -1) {
-        return error.openFailed;
-    }
+    const fd_stat = try std.os.fstat(fd);
 
-    _ = c.fstat(fd, &stat);
-
-    var buf: [*c]u8 = @ptrCast([*c]u8, c.malloc(@intCast(c_ulong, stat.st_size)));
-
-    if (c.read(fd, buf, @intCast(usize, stat.st_size)) < stat.st_size) {
+    var buf: [*c]u8 = @ptrCast([*c]u8, c.malloc(@intCast(c_ulong, fd_stat.size)) orelse return error.OOM);
+    if (c.read(fd, buf, @intCast(usize, fd_stat.size)) < fd_stat.size) {
         return error.failedToReadAllBytes;
     }
 
     jpeg_info.err = c.jpeg_std_error(&jpeg_error);
     c.jpeg_create_decompress(&jpeg_info);
-    c.jpeg_mem_src(&jpeg_info, buf, @intCast(c_ulong, stat.st_size));
+    c.jpeg_mem_src(&jpeg_info, buf, @intCast(c_ulong, fd_stat.size));
 
     _ = c.jpeg_read_header(&jpeg_info, 1);
 
@@ -117,7 +110,7 @@ fn cairo_load_jpg(path: []const u8) !*c.cairo_surface_t {
     c.cairo_surface_mark_dirty(surface);
     _ = c.jpeg_finish_decompress(&jpeg_info);
     c.jpeg_destroy_decompress(&jpeg_info);
-    _ = c.cairo_surface_set_mime_data(surface, c.CAIRO_MIME_TYPE_JPEG, buf, @intCast(c_ulong, stat.st_size), c.free, buf);
+    _ = c.cairo_surface_set_mime_data(surface, c.CAIRO_MIME_TYPE_JPEG, buf, @intCast(c_ulong, fd_stat.size), c.free, buf);
 
     return surface.?;
 }
