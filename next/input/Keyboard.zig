@@ -115,8 +115,21 @@ fn handleCompositorBindings(keysym: xkb.Keysym) bool {
             }
             return true;
         },
-        xkb.Keysym.j => {
+        xkb.Keysym.Escape => {
             server.wl_server.terminate();
+            return true;
+        },
+        xkb.Keysym.Delete => {
+            var output: ?[]const u8 = null;
+            @import("../control/spawn.zig").spawnCmd(
+                &[_][:0]const u8{ "", "alacritty" },
+                &output,
+            ) catch {};
+            if (output) |out| {
+                log.err("Spawn command returned: {s}", .{out});
+                allocator.free(out);
+            }
+
             return true;
         },
         else => return false,

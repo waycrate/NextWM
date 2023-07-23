@@ -12,7 +12,7 @@ const Error = @import("command.zig").Error;
 pub fn exitRiver(
     args: []const [:0]const u8,
     _: *?[]const u8,
-) !void {
+) Error!void {
     if (args.len > 1) return Error.TooManyArguments;
     server.wl_server.terminate();
 }

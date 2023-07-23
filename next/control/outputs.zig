@@ -21,7 +21,7 @@ const WallpaperMode = @import("../desktop/Output.zig").WallpaperMode;
 pub fn listOutputs(
     args: []const [:0]const u8,
     out: *?[]const u8,
-) !void {
+) Error!void {
     if (args.len > 1) return Error.TooManyArguments;
 
     var data = std.ArrayList(u8).init(allocator);
@@ -51,7 +51,7 @@ pub fn listOutputs(
 pub fn setWallpaper(
     args: []const [:0]const u8,
     out: *?[]const u8,
-) !void {
+) Error!void {
     const state = std.meta.stringToEnum(WallpaperKind, args[1]) orelse return Error.UnknownOption;
 
     if (state == .unset) {

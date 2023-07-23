@@ -14,7 +14,7 @@ const Error = @import("command.zig").Error;
 pub fn listInputs(
     args: []const [:0]const u8,
     out: *?[]const u8,
-) !void {
+) Error!void {
     if (args.len > 1) return Error.TooManyArguments;
 
     var output = std.ArrayList(u8).init(allocator);

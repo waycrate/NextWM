@@ -16,7 +16,7 @@ const Error = @import("command.zig").Error;
 pub fn setWidth(
     args: []const [:0]const u8,
     out: *?[]const u8,
-) !void {
+) Error!void {
     if (args.len < 2) return Error.NotEnoughArguments;
     if (args.len > 2) return Error.TooManyArguments;
 
@@ -39,7 +39,7 @@ pub fn setWidth(
 pub fn setColor(
     args: []const [:0]const u8,
     out: *?[]const u8,
-) !void {
+) Error!void {
     if (args.len < 2) return Error.NotEnoughArguments;
     if (args.len > 2) return Error.TooManyArguments;
 

@@ -14,6 +14,7 @@ const cursor = @import("cursor.zig");
 const exit = @import("exit.zig");
 const inputs = @import("inputs.zig");
 const outputs = @import("outputs.zig");
+const spawn = @import("spawn.zig");
 
 pub const Error = error{
     NoCommand,
@@ -22,18 +23,22 @@ pub const Error = error{
     TooManyArguments,
     UnknownCommand,
     UnknownOption,
+    OSError,
 };
 
 // zig fmt: off
 const commands = std.ComptimeStringMap(
     *const fn ([]const [:0]const u8, *?[]const u8) Error!void,
     .{
+        .{ "spawn",                         spawn.spawnCmd           },
         .{ "wallpaper",                     outputs.setWallpaper     },
+        //TODO: We should change *-* style commands to subcommand based systems. Eg: `border width set 3` / `border color set focused ...`
         .{ "border-width",                  border.setWidth          },
         // TODO: This is just a catch all. We will create border-focused, border-unfocused, etc soon.
         .{ "border-color",                  border.setColor          },
         .{ "csd",                           csd.csdToggle            },
         .{ "exit",                          exit.exitRiver           },
+        //TODO: We should change *-* style commands to subcommand based systems. Eg: `list inputs` / `list outputs`
         .{ "list-inputs",                   inputs.listInputs        },
         .{ "list-outputs",                  outputs.listOutputs      },
         .{ "set-repeat-rate",               inputs.setRepeat         },
@@ -61,5 +66,6 @@ pub fn errToMsg(err: Error) [:0]const u8 {
         Error.TooManyArguments => "Too many arguments\n",
         Error.UnknownOption => "Unknown option\n",
         Error.UnknownCommand => "Unknown command\n",
+        Error.OSError => "OS error\n",
     };
 }

@@ -69,6 +69,8 @@ pub fn init(focused_output: *Output, xdg_surface: *wlr.XdgSurface) error{OutOfMe
 
     xdg_surface.role_data.toplevel.events.set_app_id.add(&window.backend.xdg_toplevel.set_app_id);
     xdg_surface.role_data.toplevel.events.set_title.add(&window.backend.xdg_toplevel.set_title);
+
+    _ = xdg_surface.role_data.toplevel.setWmCapabilities(.{ .fullscreen = true });
     // Maybe eventually we'll support these?
     // TODO: xdg_surface.events.map.new_subsurface(&self.new_subsurface);
     // TODO: Handle existing subsurfaces.
@@ -135,6 +137,16 @@ pub fn handleMap(listener: *wl.Listener(void)) void {
         return;
     };
     log.debug("Window '{s}' mapped", .{self.getTitle()});
+
+    //TODO: Remove this
+    _ = self.xdg_surface.role_data.toplevel.setActivated(true);
+    const keyboard = server.seat.wlr_seat.getKeyboard() orelse return;
+    server.seat.wlr_seat.keyboardNotifyEnter(
+        self.xdg_surface.role_data.toplevel.base.surface,
+        &keyboard.keycodes,
+        keyboard.num_keycodes,
+        &keyboard.modifiers,
+    );
 }
 
 pub fn handleCommit(listener: *wl.Listener(*wlr.Surface), _: *wlr.Surface) void {

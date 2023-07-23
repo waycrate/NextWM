@@ -26,7 +26,7 @@ const FilterState = enum {
 pub fn csdToggle(
     args: []const [:0]const u8,
     _: *?[]const u8,
-) !void {
+) Error!void {
     if (args.len > 4) return Error.TooManyArguments;
     if (args.len < 4) return Error.NotEnoughArguments;
 
