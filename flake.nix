@@ -30,7 +30,6 @@
 
               # Libs
               cairo
-              mesa
               hwdata
               libGL
               libdrm
@@ -38,7 +37,9 @@
               libinput
               libjpeg
               libxkbcommon
+              mesa
               pixman
+              readline
               stdenv
               udev
               wayland

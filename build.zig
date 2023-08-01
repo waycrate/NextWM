@@ -16,6 +16,8 @@ const ScanProtocolsStep = @import("deps/zig-wayland/build.zig").ScanProtocolsSte
 
 const version = "0.1.0-dev";
 
+const ziglua = @import("deps/ziglua/build.zig");
+
 pub fn build(builder: *std.build.Builder) !void {
     const target = builder.standardTargetOptions(.{});
     const build_mode = builder.standardReleaseOptions();
@@ -84,6 +86,7 @@ pub fn build(builder: *std.build.Builder) !void {
             .dependencies = &[_]std.build.Pkg{ wayland, xkbcommon, pixman },
         };
         exe.addPackage(wlroots);
+        exe.addPackage(ziglua.linkAndPackage(builder, exe, .{}));
     }
 
     // Links:
