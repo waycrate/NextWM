@@ -52,6 +52,7 @@ pub fn init(self: *Self, device: *wlr.InputDevice) !void {
     self.server.seat.wlr_seat.setKeyboard(self.wlr_keyboard);
 
     self.wlr_keyboard.events.key.add(&self.key);
+    self.wlr_keyboard.events.modifiers.add(&self.modifiers);
     self.wlr_input_device.events.destroy.add(&self.destroy);
 }
 

@@ -25,3 +25,7 @@
 	path = deps/scenefx
 	url = https://github.com/wlrfx/scenefx
 	ignore = dirty
+[submodule "deps/ziglua"]
+	path = deps/ziglua
+	url = https://github.com/natecraddock/ziglua
+    branch = zig-0.10.0

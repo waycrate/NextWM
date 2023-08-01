@@ -16,6 +16,8 @@ const os = std.os;
 const std = @import("std");
 
 const wlr = @import("wlroots");
+const ziglua = @import("ziglua");
+const Lua = ziglua.Lua;
 
 const Server = @import("Server.zig");
 const stderr = io.getStdErr().writer();
@@ -32,7 +34,7 @@ pub fn main() anyerror!void {
     const params = comptime clap.parseParamsComptime(
         \\-h, --help             print this help message and exit.
         \\-v, --version          print the version number and exit.
-        \\-c, --command <str>    run `sh -c <str>` on startup.
+        \\-c, --config <str>     custom configuration file path.
         \\-d, --debug            set log level to debug mode.
         \\-l, --level <str>      set the log level: error, warnings, or info.
     );
@@ -77,37 +79,22 @@ pub fn main() anyerror!void {
     }
 
     // Fetching the startup command.
-    const startup_command = blk: {
+    const init_file = blk: {
         // If command flag is mentioned, use it.
-        if (args.command) |command| {
-            break :blk try allocator.dupeZ(u8, command);
+        if (args.config) |config| {
+            break :blk try allocator.dupeZ(u8, config);
         } else {
             // Try to resolve xdg_config_home or home respectively and use their path's if possible.
             if (os.getenv("XDG_CONFIG_HOME")) |xdg_config_home| {
-                break :blk try fs.path.joinZ(allocator, &[_][]const u8{ xdg_config_home, "next/nextrc" });
+                break :blk try fs.path.joinZ(allocator, &[_][]const u8{ xdg_config_home, "next/init.lua" });
             } else if (os.getenv("HOME")) |home| {
-                break :blk try fs.path.joinZ(allocator, &[_][]const u8{ home, ".config/next/nextrc" });
+                break :blk try fs.path.joinZ(allocator, &[_][]const u8{ home, ".config/next/init.lua" });
             } else {
                 return;
             }
         }
     };
-    defer allocator.free(startup_command);
-
-    // accessZ takes a null terminated strings and checks against the mentioned bit.
-    // X_OK is the executable bit.
-    os.accessZ(startup_command, os.X_OK) catch |err| {
-        if (err == error.PermissionDenied) {
-            // R_OK stands for the readable bit
-            if (os.accessZ(startup_command, os.R_OK)) {
-                // If the file is readable but cannot be executed then it must not have the execution bit set.
-                std.log.err("Failed to run nextrc file: {s}\nPlease mark the file executable with the following command:\n    chmod +x {s}", .{ startup_command, startup_command });
-                return;
-            } else |_| {}
-            std.log.err("Failed to run nextrc file: {s}\n{s}", .{ startup_command, @errorName(err) });
-            return;
-        }
-    };
+    defer allocator.free(init_file);
 
     // Wayland requires XDG_RUNTIME_DIR to be set in order for proper functioning.
     if (os.getenv("XDG_RUNTIME_DIR") == null) {
@@ -138,39 +125,7 @@ pub fn main() anyerror!void {
     defer server.deinit();
     try server.start();
 
-    // Fork into a child process.
-    const pid = try os.fork();
-    if (pid == 0) {
-        var errno = os.errno(c.setsid());
-        if (@enumToInt(errno) != 0) {
-            std.log.err("Setsid syscall failed: {any}", .{errno});
-        }
-
-        // SET_MASK sets the blocked signal to an empty signal set in this case.
-        errno = os.errno(os.system.sigprocmask(os.SIG.SETMASK, &os.empty_sigset, null));
-        if (@enumToInt(errno) != 0) {
-            std.log.err("Sigprocmask syscall failed: {any}", .{errno});
-        }
-
-        // Setting default handler for sigpipe.
-        const sig_dfl = os.Sigaction{
-            .handler = .{ .handler = os.SIG.DFL },
-            .mask = os.empty_sigset,
-            .flags = 0,
-        };
-        try os.sigaction(os.SIG.PIPE, &sig_dfl, null);
-
-        // NOTE: it's convention for the first element in the argument vector to be same as the invoking binary.
-        // Read https://man7.org/linux/man-pages/man2/execve.2.html for more info.
-        const c_argv = [_:null]?[*:0]const u8{ "/bin/sh", "-c", startup_command, null };
-        os.execveZ("/bin/sh", &c_argv, std.c.environ) catch os.exit(1);
-    }
-
-    // Sending sigterm to a negative pid traverses down it's child list and sends sigterm to each of them.
-    // Read https://man7.org/linux/man-pages/man2/kill.2.html for more info.
-    defer os.kill(-pid, os.SIG.TERM) catch |err| {
-        std.log.err("Failed to kill init-child: {d} {s}", .{ pid, @errorName(err) });
-    };
+    try loadConfiguration(init_file);
 
     // Run the server!
     std.log.info("Running NextWM event loop", .{});
@@ -211,4 +166,27 @@ fn toUpper(comptime string: []const u8) *const [string.len:0]u8 {
         for (tmp) |*char, i| char.* = std.ascii.toUpper(string[i]);
         return &tmp;
     }
+}
+
+fn loadConfiguration(init_file: [:0]const u8) !void {
+    var lua = try Lua.init(allocator);
+    defer lua.deinit();
+
+    std.fs.cwd().access(init_file, .{}) catch |err| {
+        std.log.err("Failed to access compositor configuration file: {s}, {s}", .{ init_file, @errorName(err) });
+        os.exit(1);
+    };
+
+    lua.openBase();
+    lua.openCoroutine();
+    lua.openPackage();
+    lua.openString();
+    lua.openUtf8();
+    lua.openTable();
+    lua.openMath();
+    lua.openIO();
+    lua.openOS();
+    lua.openDebug();
+
+    try lua.doFile(init_file);
 }
