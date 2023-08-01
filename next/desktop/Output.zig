@@ -101,6 +101,36 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) !void {
     }
 }
 
+fn configure_node_decoration(self: *Self, node: *wlr.SceneNode) void {
+    if (!node.enabled) {
+        return;
+    }
+
+    if (node.type == .buffer) {
+        const scene_buffer = wlr.SceneBuffer.fromNode(node);
+        const scene_surface = wlr.SceneSurface.fromBuffer(scene_buffer) orelse return;
+
+        var xdg_surface: *wlr.XdgSurface = undefined;
+        if (wlr.Surface.isXdgSurface(scene_surface.surface)) {
+            xdg_surface = wlr.XdgSurface.fromWlrSurface(scene_surface.surface) orelse return;
+        }
+
+        if (xdg_surface.role == .toplevel) {
+            scene_buffer.setOpacity(self.server.config.toplevel_opacity);
+
+            if (!wlr.Surface.isSubsurface(xdg_surface.surface)) {
+                scene_buffer.setCornerRadius(self.server.config.toplevel_corner_radius);
+            }
+        }
+    } else if (node.type == .tree) {
+        const tree = @fieldParentPtr(wlr.SceneTree, "node", node);
+        var it = tree.children.safeIterator(.forward);
+        while (it.next()) |scene_node| {
+            configure_node_decoration(self, scene_node);
+        }
+    }
+}
+
 pub fn init_wallpaper_rendering(self: *Self) !void {
     // We do some cleanup first.
     const wallpaper_path = allocator.dupe(u8, self.wallpaper_path.?) catch return error.OOM;
@@ -163,6 +193,9 @@ fn handleFrame(listener: *wl.Listener(*wlr.Output), _: *wlr.Output) void { // Ge
 
     // Get the scene output with respect to the wlr.Output object that's being passed.
     const scene_output = self.server.wlr_scene.getSceneOutput(self.wlr_output).?;
+
+    // Pass decoration data to the scene nodes.
+    self.configure_node_decoration(&scene_output.scene.tree.node);
 
     // Commit the output to the scene.
     _ = scene_output.commit();

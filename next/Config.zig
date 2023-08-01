@@ -33,6 +33,10 @@ repeat_delay: i32 = 300,
 
 border_width: u8 = 2,
 
+//TODO: make these configurable
+toplevel_corner_radius: c_int = 20,
+toplevel_opacity: f32 = 1, // Ranges from 0 to 1
+
 pub fn init() Self {
     log.debug("Initialized compositor config", .{});
     const self = .{};

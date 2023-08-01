@@ -14,10 +14,6 @@
 	path = deps/zig-clap
 	url = https://github.com/Hejsil/zig-clap
 	ignore = dirty
-[submodule "deps/zig-wlroots"]
-	path = deps/zig-wlroots
-	url = https://github.com/swaywm/zig-wlroots.git
-	ignore = dirty
 [submodule "deps/zig-pixman"]
 	path = deps/zig-pixman
 	url = https://github.com/ifreund/zig-pixman
@@ -25,3 +21,6 @@
 	path = deps/scenefx
 	url = https://github.com/wlrfx/scenefx
 	ignore = dirty
+[submodule "deps/zig-wlroots"]
+	path = deps/zig-wlroots
+	url = https://github.com/shinyzenith/zig-wlr

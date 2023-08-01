@@ -100,6 +100,7 @@ pub fn build(builder: *std.build.Builder) !void {
         exe.linkSystemLibrary("wlroots");
         exe.linkSystemLibrary("xkbcommon");
         exe.addObjectFile(std.fmt.comptimePrint("{s}/build/libscenefx.so.{d}", .{ scenefx_path, new_so_version }));
+        exe.addIncludePath(std.fmt.comptimePrint("{s}/include/wlr", .{scenefx_path}));
     }
     exe.install();
 
