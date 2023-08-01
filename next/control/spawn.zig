@@ -20,7 +20,7 @@ pub fn spawnCmd(
     if (args.len < 2) return Error.NotEnoughArguments;
     if (args.len > 2) return Error.TooManyArguments;
 
-    log.err("Attempting to run shell command: {s}", .{args[1]});
+    log.debug("Attempting to run shell command: {s}", .{args[1]});
 
     const cmd = [_:null]?[*:0]const u8{ "/bin/sh", "-c", args[1], null };
     const pid = os.fork() catch |err| {
