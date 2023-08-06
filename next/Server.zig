@@ -22,6 +22,7 @@ const Cursor = @import("input/Cursor.zig");
 const DecorationManager = @import("desktop/DecorationManager.zig");
 const InputManager = @import("input/InputManager.zig");
 const Keyboard = @import("input/Keyboard.zig");
+const LayerSurface = @import("desktop/LayerSurface.zig");
 const Output = @import("desktop/Output.zig");
 const OutputLayout = @import("desktop/OutputLayout.zig");
 const Seat = @import("input/Seat.zig");
@@ -380,13 +381,15 @@ fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgS
             };
         } else {
             log.err("No focused wlr_output found. Skipping xdg_toplevel.", .{});
+            xdg_surface.resource.destroy();
             return;
         }
     }
 }
 
 // This callback is called when a new layer surface is created.
-pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), wlr_layer_surface: *wlr.LayerSurfaceV1) void {
+pub fn newLayerSurface(listener: *wl.Listener(*wlr.LayerSurfaceV1), wlr_layer_surface: *wlr.LayerSurfaceV1) void {
+    const self = @fieldParentPtr(Self, "new_layer_surface", listener);
     log.debug("Signal: wlr_layer_shell_new_surface", .{});
     log.debug(
         "New layer surface: namespace {s}, layer {s}, anchor {b:0>4}, size {},{}, margin {},{},{},{}, exclusive_zone {}",
@@ -403,7 +406,23 @@ pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), wlr_layer_surface: 
             wlr_layer_surface.pending.exclusive_zone,
         },
     );
-    // TODO: Finish this.
+
+    if (wlr_layer_surface.output == null) {
+        const output = self.seat.focused_output orelse {
+            log.err("No focused output found for surface: {s}", .{wlr_layer_surface.namespace});
+            wlr_layer_surface.destroy();
+            return;
+        };
+
+        log.debug("Null output layer surface assigned to output: {s}", .{output.wlr_output.name});
+        wlr_layer_surface.output = output.wlr_output;
+    }
+
+    LayerSurface.init(wlr_layer_surface) catch {
+        log.err("Failed to allocate memory", .{});
+        wlr_layer_surface.resource.postNoMemory();
+        return;
+    };
 }
 
 // This callback is called when a new xwayland surface is created.

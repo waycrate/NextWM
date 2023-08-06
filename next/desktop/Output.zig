@@ -26,6 +26,7 @@ pub const WallpaperMode = enum {
 };
 
 server: *Server,
+usable_box: wlr.Box, // The output space remaining after respecting layer-shelll exclusive zones.
 
 wlr_output: *wlr.Output,
 
@@ -67,9 +68,19 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) !void {
 
     //TODO: self.wlr_output.enableAdaptiveSync(true); if config states it.
 
+    var width: c_int = undefined;
+    var height: c_int = undefined;
+    self.wlr_output.effectiveResolution(&width, &height);
+
     self.* = .{
         .server = server,
         .wlr_output = wlr_output,
+        .usable_box = .{
+            .x = 0,
+            .y = 0,
+            .width = width,
+            .height = height,
+        },
     };
 
     self.wlr_output.data = @ptrToInt(&self);
@@ -96,7 +107,7 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) !void {
     }
 
     // If focused_output is null, we become the new focused_output :)
-    if (self.server.seat.focused_output) |_| {} else {
+    if (self.server.seat.focused_output == null) {
         self.server.seat.focusOutput(self);
     }
 }
@@ -250,4 +261,20 @@ pub fn getMake(self: *Self) [*:0]const u8 {
 pub fn getName(self: *Self) []const u8 {
     const name = self.wlr_output.name;
     return std.mem.span(name);
+}
+
+pub fn arrangeLayers(self: *Self) void {
+    var box: wlr.Box = .{
+        .x = 0,
+        .y = 0,
+        .width = undefined,
+        .height = undefined,
+    };
+    self.wlr_output.effectiveResolution(&box.width, &box.height);
+
+    var usable_box = box;
+
+    //TODO: Finish this.
+
+    self.usable_box = usable_box;
 }

@@ -41,7 +41,7 @@ fn layoutChange(listener: *wl.Listener(*wlr.OutputLayout), _: *wlr.OutputLayout)
     // Everytime an output is resized / added / removed, we redo wallpaper rendering.
     // This is probably not efficient but without it in nested sessions, if wlr_output is resized, the wallpaper doesn't get resized accordingly.
     for (self.server.outputs.items) |output| {
-        if (self.server.seat.focused_output) |_| {} else {
+        if (self.server.seat.focused_output == null) {
             self.server.seat.focusOutput(output);
         }
 
