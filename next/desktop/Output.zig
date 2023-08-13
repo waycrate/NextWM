@@ -119,6 +119,11 @@ fn configure_node_decoration(self: *Self, node: *wlr.SceneNode) void {
             scene_buffer.setOpacity(self.server.config.toplevel_opacity);
 
             if (!wlr.Surface.isSubsurface(xdg_surface.surface)) {
+                var shadow_data = wlr.ShadowData.getDefault();
+                shadow_data.enabled = true;
+                shadow_data.color.* = self.server.config.toplevel_box_shadow_color;
+
+                scene_buffer.setShadowData(shadow_data);
                 scene_buffer.setCornerRadius(self.server.config.toplevel_corner_radius);
             }
         }

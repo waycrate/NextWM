@@ -36,6 +36,7 @@ border_width: u8 = 2,
 //TODO: make these configurable
 toplevel_corner_radius: c_int = 20,
 toplevel_opacity: f32 = 1, // Ranges from 0 to 1
+toplevel_box_shadow_color: [4]f32 = .{ 0.0, 0.0, 0.0, 1.0 },
 
 pub fn init() Self {
     log.debug("Initialized compositor config", .{});
