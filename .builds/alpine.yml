@@ -28,14 +28,20 @@ packages:
   - xcb-util-wm-dev
   - xwayland
 sources:
+    - https://github.com/wlrfx/scenefx
     - https://git.sr.ht/~shinyzenith/NextWM
     - https://gitlab.freedesktop.org/wayland/wayland.git
     - https://gitlab.freedesktop.org/wlroots/wlroots.git
 tasks:
     - install-deps: |
-          ZIG_VERSION=0.10.0
+          ZIG_VERSION=0.11.0
           WAYLAND_VERSION=1.21.0
           WLROOTS_VERSION=0.16.0
+
+          cd scenefx
+          meson setup build --auto-features enabled --reconfigure -Dwerror=false -Dexamples=false
+          ninja -C build install
+          cd ..
 
           cd wayland
           git checkout $WAYLAND_VERSION

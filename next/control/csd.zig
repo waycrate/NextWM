@@ -52,11 +52,11 @@ pub fn csdToggle(
     var decoration_it = server.decoration_manager.decorations.first;
     while (decoration_it) |decoration_node| : (decoration_it = decoration_node.next) {
         const xdg_toplevel_decoration = decoration_node.data.xdg_toplevel_decoration;
-        const window = @intToPtr(*Window, xdg_toplevel_decoration.surface.data);
+        const window = @as(*Window, @ptrFromInt(xdg_toplevel_decoration.surface.data));
 
         const window_data: []const u8 = switch (kind) {
-            .@"app-id" => std.mem.span(window.getAppId()),
-            .title => std.mem.span(window.getTitle()),
+            .@"app-id" => std.mem.sliceTo(window.getAppId(), 0),
+            .title => std.mem.sliceTo(window.getTitle(), 0),
         };
 
         if (std.mem.eql(u8, key, window_data)) {

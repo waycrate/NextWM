@@ -331,7 +331,7 @@ fn requestActivate(
     if (event.surface.isXdgSurface()) {
         if (wlr.XdgSurface.fromWlrSurface(event.surface)) |xdg_surface| {
             if (xdg_surface.role == .toplevel) {
-                window = @intToPtr(*Window, xdg_surface.data);
+                window = @as(*Window, @ptrFromInt(xdg_surface.data));
             }
         }
     }
@@ -393,7 +393,7 @@ pub fn newLayerSurface(_: *wl.Listener(*wlr.LayerSurfaceV1), wlr_layer_surface: 
         .{
             wlr_layer_surface.namespace,
             @tagName(wlr_layer_surface.pending.layer),
-            @bitCast(u32, wlr_layer_surface.pending.anchor),
+            @as(u32, @bitCast(wlr_layer_surface.pending.anchor)),
             wlr_layer_surface.pending.desired_width,
             wlr_layer_surface.pending.desired_height,
             wlr_layer_surface.pending.margin.top,

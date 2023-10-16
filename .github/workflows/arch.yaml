@@ -18,9 +18,15 @@ jobs:
 
             - name: Installing dependencies
               run: |
-                  ZIG_VERSION=0.10.0
+                  ZIG_VERSION=0.11.0
                   WAYLAND_VERSION=1.21.0
                   WLROOTS_VERSION=0.16.0
+
+                  git clone https://github.com/wlrfx/scenefx.git
+                  cd scenefx
+                  meson setup build --auto-features enabled --reconfigure -Dwerror=false -Dexamples=false
+                  ninja -C build install
+                  cd ..
 
                   git clone https://gitlab.freedesktop.org/wayland/wayland.git
                   cd wayland

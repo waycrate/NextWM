@@ -54,7 +54,7 @@ fn handleRequest(control: *next.ControlV1, request: next.ControlV1.Request, self
     switch (request) {
         .destroy => control.destroy(),
         .add_argument => |add_argument| {
-            const slice = allocator.dupeZ(u8, std.mem.span(add_argument.argument)) catch {
+            const slice = allocator.dupeZ(u8, std.mem.sliceTo(add_argument.argument, 0)) catch {
                 control.getClient().postNoMemory();
                 return;
             };
@@ -96,15 +96,15 @@ fn handleRequest(control: *next.ControlV1, request: next.ControlV1.Request, self
                 return;
             };
 
-            var success_message: [:0]const u8 = undefined;
-            if (output) |s| {
-                success_message = allocator.dupeZ(u8, s) catch {
-                    callback.getClient().postNoMemory();
-                    return;
-                };
-            } else {
-                success_message = "";
-            }
+            const success_message: [:0]const u8 = blk: {
+                if (output) |s| {
+                    break :blk allocator.dupeZ(u8, s) catch {
+                        callback.getClient().postNoMemory();
+                        return;
+                    };
+                } else break :blk "";
+            };
+
             defer if (output != null) allocator.free(success_message);
             callback.sendSuccess(success_message);
         },

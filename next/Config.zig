@@ -47,11 +47,11 @@ pub fn init() Self {
 }
 
 pub fn csdAllowed(self: Self, window: *Window) bool {
-    if (self.csd_app_ids.contains(std.mem.span(window.getAppId()))) {
+    if (self.csd_app_ids.contains(std.mem.sliceTo(window.getAppId(), 0))) {
         return true;
     }
 
-    if (self.csd_titles.contains(std.mem.span(window.getTitle()))) {
+    if (self.csd_titles.contains(std.mem.sliceTo(window.getTitle(), 0))) {
         return true;
     }
     return false;

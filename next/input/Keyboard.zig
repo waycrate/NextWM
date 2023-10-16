@@ -71,7 +71,7 @@ fn handleKey(listener: *wl.Listener(*wlr.Keyboard.event.Key), event: *wlr.Keyboa
 
     for (keysyms) |sym| {
         // Check if the sym is a modifier.
-        if (!(@enumToInt(sym) >= xkb.Keysym.Shift_L and @enumToInt(sym) <= xkb.Keysym.Hyper_R)) {
+        if (!(@intFromEnum(sym) >= xkb.Keysym.Shift_L and @intFromEnum(sym) <= xkb.Keysym.Hyper_R)) {
             //TODO: Hide while typing.
         }
     }
@@ -105,11 +105,11 @@ fn handleDestroy(listener: *wl.Listener(*wlr.InputDevice), _: *wlr.InputDevice) 
 }
 
 fn handleCompositorBindings(keysym: xkb.Keysym) bool {
-    switch (@enumToInt(keysym)) {
+    switch (@intFromEnum(keysym)) {
         xkb.Keysym.XF86Switch_VT_1...xkb.Keysym.XF86Switch_VT_12 => {
             if (server.wlr_backend.isMulti()) {
                 if (server.wlr_backend.getSession()) |session| {
-                    session.changeVt(@enumToInt(keysym) - xkb.Keysym.XF86Switch_VT_1 + 1) catch {
+                    session.changeVt(@intFromEnum(keysym) - xkb.Keysym.XF86Switch_VT_1 + 1) catch {
                         log.err("Failed to switch VT.", .{});
                     };
                 }

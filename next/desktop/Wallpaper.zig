@@ -67,19 +67,19 @@ fn cairo_load_jpg(path: []const u8) !*c.cairo_surface_t {
     var jpeg_error: c.jpeg_error_mgr = undefined;
     var jpeg_info: c.jpeg_decompress_struct = undefined;
 
-    const fd = @intCast(c_int, try std.os.open(path, 0 | std.os.O.RDONLY, undefined));
+    const fd = @as(c_int, @intCast(try std.os.open(path, 0 | std.os.O.RDONLY, undefined)));
     defer _ = std.os.close(fd);
 
     const fd_stat = try std.os.fstat(fd);
 
-    var buf: [*c]u8 = @ptrCast([*c]u8, c.malloc(@intCast(c_ulong, fd_stat.size)) orelse return error.OOM);
-    if (c.read(fd, buf, @intCast(usize, fd_stat.size)) < fd_stat.size) {
+    var buf: [*c]u8 = @as([*c]u8, @ptrCast(c.malloc(@as(c_ulong, @intCast(fd_stat.size))) orelse return error.OOM));
+    if (c.read(fd, buf, @as(usize, @intCast(fd_stat.size))) < fd_stat.size) {
         return error.failedToReadAllBytes;
     }
 
     jpeg_info.err = c.jpeg_std_error(&jpeg_error);
     c.jpeg_create_decompress(&jpeg_info);
-    c.jpeg_mem_src(&jpeg_info, buf, @intCast(c_ulong, fd_stat.size));
+    c.jpeg_mem_src(&jpeg_info, buf, @as(c_ulong, @intCast(fd_stat.size)));
 
     _ = c.jpeg_read_header(&jpeg_info, 1);
 
@@ -95,14 +95,14 @@ fn cairo_load_jpg(path: []const u8) !*c.cairo_surface_t {
 
     _ = c.jpeg_start_decompress(&jpeg_info);
 
-    var surface = c.cairo_image_surface_create(c.CAIRO_FORMAT_RGB24, @intCast(c_int, jpeg_info.output_width), @intCast(c_int, jpeg_info.output_height));
+    var surface = c.cairo_image_surface_create(c.CAIRO_FORMAT_RGB24, @as(c_int, @intCast(jpeg_info.output_width)), @as(c_int, @intCast(jpeg_info.output_height)));
     if (c.cairo_surface_status(surface) != c.CAIRO_STATUS_SUCCESS) {
         c.jpeg_destroy_decompress(&jpeg_info);
         return error.cairoSurfaceCreationFailed;
     }
 
     while (jpeg_info.output_scanline < jpeg_info.output_height) {
-        var row_address = c.cairo_image_surface_get_data(surface) + (jpeg_info.output_scanline * @intCast(c_uint, c.cairo_image_surface_get_stride(surface)));
+        var row_address = c.cairo_image_surface_get_data(surface) + (jpeg_info.output_scanline * @as(c_uint, @intCast(c.cairo_image_surface_get_stride(surface))));
 
         _ = c.jpeg_read_scanlines(&jpeg_info, &row_address, 1);
     }
@@ -110,39 +110,39 @@ fn cairo_load_jpg(path: []const u8) !*c.cairo_surface_t {
     c.cairo_surface_mark_dirty(surface);
     _ = c.jpeg_finish_decompress(&jpeg_info);
     c.jpeg_destroy_decompress(&jpeg_info);
-    _ = c.cairo_surface_set_mime_data(surface, c.CAIRO_MIME_TYPE_JPEG, buf, @intCast(c_ulong, fd_stat.size), c.free, buf);
+    _ = c.cairo_surface_set_mime_data(surface, c.CAIRO_MIME_TYPE_JPEG, buf, @as(c_ulong, @intCast(fd_stat.size)), c.free, buf);
 
     return surface.?;
 }
 
 pub fn cairo_surface_transform_apply(image_surface: *c.cairo_surface_t, transform: WallpaperMode, width: u64, height: u64) !*c.cairo_surface_t {
-    const surface = c.cairo_image_surface_create(c.CAIRO_FORMAT_ARGB32, @intCast(c_int, width), @intCast(c_int, height)) orelse return error.cairoCreateImageSurfaceFailed;
+    const surface = c.cairo_image_surface_create(c.CAIRO_FORMAT_ARGB32, @as(c_int, @intCast(width)), @as(c_int, @intCast(height))) orelse return error.cairoCreateImageSurfaceFailed;
 
     const cairo = c.cairo_create(surface) orelse return error.cairoCtxFailed;
     defer c.cairo_destroy(cairo);
     defer c.cairo_surface_destroy(image_surface);
 
-    const image_width = @intToFloat(f64, c.cairo_image_surface_get_width(image_surface));
-    const image_height = @intToFloat(f64, c.cairo_image_surface_get_height(image_surface));
+    const image_width = @as(f64, @floatFromInt(c.cairo_image_surface_get_width(image_surface)));
+    const image_height = @as(f64, @floatFromInt(c.cairo_image_surface_get_height(image_surface)));
 
     switch (transform) {
         .fit => {
-            _ = c.cairo_rectangle(cairo, 0, 0, @intToFloat(f64, width), @intToFloat(f64, height));
+            _ = c.cairo_rectangle(cairo, 0, 0, @as(f64, @floatFromInt(width)), @as(f64, @floatFromInt(height)));
             c.cairo_clip(cairo);
-            const width_ratio: f64 = @intToFloat(f64, width) / image_width;
-            if (width_ratio * image_height >= @intToFloat(f64, height)) {
+            const width_ratio: f64 = @as(f64, @floatFromInt(width)) / image_width;
+            if (width_ratio * image_height >= @as(f64, @floatFromInt(height))) {
                 c.cairo_scale(cairo, width_ratio, width_ratio);
             } else {
-                const height_ratio = @intToFloat(f64, height) / image_height;
-                c.cairo_translate(cairo, @divFloor(-(image_width * height_ratio - @intToFloat(f64, width)), 2), 0);
+                const height_ratio = @as(f64, @floatFromInt(height)) / image_height;
+                c.cairo_translate(cairo, @divFloor(-(image_width * height_ratio - @as(f64, @floatFromInt(width))), 2), 0);
                 c.cairo_scale(cairo, height_ratio, height_ratio);
             }
         },
         .stretch => {
             c.cairo_scale(
                 cairo,
-                @intToFloat(f64, width) / image_width,
-                @intToFloat(f64, height) / image_height,
+                @as(f64, @floatFromInt(width)) / image_width,
+                @as(f64, @floatFromInt(height)) / image_height,
             );
         },
     }

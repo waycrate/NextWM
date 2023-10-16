@@ -16,56 +16,59 @@ pub const BuildType = enum {
     rust,
 };
 
-builder: *std.build.Builder,
 step: std.build.Step,
 build_type: BuildType,
 version: []const u8,
-target: std.zig.CrossTarget,
-build_mode: std.builtin.Mode,
 
-pub fn create(builder: *std.build.Builder, build_type: BuildType, version: []const u8, target: std.zig.CrossTarget, build_mode: std.builtin.Mode) !*Self {
+pub fn create(builder: *std.Build, build_type: BuildType, version: []const u8) !*Self {
     const self = try allocator.create(Self);
     self.* = .{
-        .builder = builder,
-        .step = std.build.Step.init(.custom, "Build nextctl", allocator, make),
+        .step = std.build.Step.init(.{
+            .id = .custom,
+            .name = "Build nextctl",
+            .makeFn = &make,
+            .owner = builder,
+        }),
         .build_type = build_type,
         .version = version,
-        .target = target,
-        .build_mode = build_mode,
     };
 
     return self;
 }
 
-fn make(step: *std.build.Step) !void {
+fn make(step: *std.build.Step, _: *std.Progress.Node) anyerror!void {
     const self = @fieldParentPtr(Self, "step", step);
+    const builder = self.step.owner;
+
     switch (self.build_type) {
         .c => {
             try syncVersion("#define VERSION ", "nextctl/include/nextctl.h", self.version);
-            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "cd nextctl; zig build" });
+            _ = builder.exec(&.{ "make", "-C", "nextctl" });
         },
         .rust => {
             try syncVersion("version = ", "nextctl-rs/Cargo.toml", self.version);
-            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "make -C ./nextctl-rs" });
+            _ = builder.exec(&.{ "make", "-C", "nextctl-rs" });
         },
         .go => {
             try syncVersion("const VERSION = ", "nextctl-go/cmd/nextctl/nextctl.go", self.version);
-            _ = try self.builder.exec(&[_][]const u8{ "sh", "-c", "make -C ./nextctl-go" });
+            _ = builder.exec(&.{ "make", "-C", "nextctl-go" });
         },
     }
 }
 
 pub fn install(self: *Self) !void {
-    self.builder.getInstallStep().dependOn(&self.step);
+    const builder = self.step.owner;
+    builder.getInstallStep().dependOn(&self.step);
+
     switch (self.build_type) {
         .c => {
-            self.builder.installFile("./nextctl/zig-out/bin/nextctl", "bin/nextctl");
+            builder.installFile("./nextctl/zig-out/bin/nextctl", "bin/nextctl");
         },
         .rust => {
-            self.builder.installFile("./nextctl-rs/target/release/nextctl", "bin/nextctl");
+            builder.installFile("./nextctl-rs/target/release/nextctl", "bin/nextctl");
         },
         .go => {
-            self.builder.installFile("./nextctl-go/nextctl", "bin/nextctl");
+            builder.installFile("./nextctl-go/nextctl", "bin/nextctl");
         },
     }
 }

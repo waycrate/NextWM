@@ -54,9 +54,10 @@ Note: All Nextctl implementations are exactly identical.
 1. `wayland-protocols` *
 1. `wayland`
 1. `wlroots` 0.16
+1. `scenefx` (Currently chasing master as there's no tagged release.)
 1. `xkbcommon`
 1. `xwayland` (Optional. Required if you want Xwayland support.)
-1. `zig` 0.10.0 *
+1. `zig` 0.11.0 *
 
 _\* Compile-time dependencies_
 

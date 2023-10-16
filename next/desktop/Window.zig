@@ -44,7 +44,7 @@ pub fn init(self: *Self, output: *Output, backend: Backend) !void {
     };
 
     switch (self.backend) {
-        .xdg_toplevel => |xdg_toplevel| xdg_toplevel.xdg_surface.data = @ptrToInt(self),
+        .xdg_toplevel => |xdg_toplevel| xdg_toplevel.xdg_surface.data = @intFromPtr(self),
     }
 }
 

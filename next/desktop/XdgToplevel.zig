@@ -159,10 +159,10 @@ pub fn handleCommit(listener: *wl.Listener(*wlr.Surface), _: *wlr.Surface) void 
 
     const geom = self.window.output.getGeometry();
     self.window.backend.xdg_toplevel.resize(
-        @intCast(c_int, geom.x),
-        @intCast(c_int, geom.y),
-        @intCast(c_int, geom.width),
-        @intCast(c_int, geom.height),
+        @as(c_int, @intCast(geom.x)),
+        @as(c_int, @intCast(geom.y)),
+        @as(c_int, @intCast(geom.width)),
+        @as(c_int, @intCast(geom.height)),
     );
 }
 

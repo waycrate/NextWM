@@ -30,7 +30,7 @@ pub fn listInputs(
             device.wlr_input_device.name,
         });
     }
-    out.* = output.toOwnedSlice();
+    out.* = try output.toOwnedSlice();
 }
 
 pub fn setRepeat(

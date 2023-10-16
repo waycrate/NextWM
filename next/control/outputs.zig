@@ -41,11 +41,11 @@ pub fn listOutputs(
             output.getName(),
             output.getDescription(),
             output.getMake(),
-            @boolToInt(output.wlr_output.enabled),
-            @boolToInt(output.wlr_output.adaptive_sync_status == .enabled),
+            @intFromBool(output.wlr_output.enabled),
+            @intFromBool(output.wlr_output.adaptive_sync_status == .enabled),
         });
     }
-    out.* = data.toOwnedSlice();
+    out.* = try data.toOwnedSlice();
 }
 
 pub fn setWallpaper(
@@ -63,12 +63,12 @@ pub fn setWallpaper(
     }
 
     for (server.outputs.items) |output| {
-        if (std.mem.eql(u8, output.getName(), std.mem.span(args[2]))) {
+        if (std.mem.eql(u8, output.getName(), std.mem.sliceTo(args[2], 0))) {
             switch (state) {
                 .set => {
                     output.has_wallpaper = true;
                     output.wallpaper_mode = std.meta.stringToEnum(WallpaperMode, args[3]) orelse return Error.UnknownOption;
-                    output.wallpaper_path = allocator.dupe(u8, std.mem.span(args[4])) catch return Error.OutOfMemory;
+                    output.wallpaper_path = allocator.dupe(u8, std.mem.sliceTo(args[4], 0)) catch return Error.OutOfMemory;
                     output.init_wallpaper_rendering() catch |err| {
                         log.err("Wallpaper setting failed: {s}", .{@errorName(err)});
                         out.* = try std.fmt.allocPrint(allocator, "Wallpaper render failed: {s}\n", .{@errorName(err)});

@@ -8,11 +8,12 @@ install:
 	zig build $(BUILD_FLAGS) --prefix $(PREFIX)
 
 check:
-	zig fmt --check next/
-	zig fmt --check *.zig
-	@#$(MAKE) -C ./nextctl -s $@ #TODO: Implement this in nextctl
+	$(MAKE) -C ./nextctl -s $@
 	$(MAKE) -C ./nextctl-rs -s $@
 	$(MAKE) -C ./nextctl-go -s $@
+
+	zig fmt --check next/
+	zig fmt --check *.zig
 
 uninstall:
 	$(RM) $(PREFIX)/bin/next
@@ -26,6 +27,7 @@ uninstall:
 clean:
 	$(MAKE) -C ./nextctl-go -s $@
 	$(MAKE) -C ./nextctl-rs -s $@
+
 	$(RM) -r ./nextctl/zig-cache ./nextctl/zig-out
 	$(RM) -r zig-cache zig-out
 	$(RM) ./docs/*.gz

@@ -1,9 +1,7 @@
 {
   description = "NextWM devel";
 
-  inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-  };
+  inputs = { nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable"; };
 
   outputs = { self, nixpkgs, ... }:
     let
@@ -20,7 +18,9 @@
         in {
           default = pkgs.mkShell {
             name = "NextWM-devel";
+
             nativeBuildInputs = with pkgs; [
+              (callPackage ./scenefx.nix { })
               # Compilers
               cargo
               go

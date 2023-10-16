@@ -45,18 +45,18 @@ pub fn main() anyerror!void {
     defer res.deinit();
 
     // Print help message if requested.
-    if (args.help) {
+    if (args.help != 0) {
         try stderr.writeAll("Usage: next [options]\n");
         return clap.help(stderr, clap.Help, &params, .{});
     }
 
     // Print version information if requested.
-    if (args.version) {
+    if (args.version != 0) {
         try stdout.print("Next version: {s}\n", .{build_options.version});
         return;
     }
 
-    if (args.debug) {
+    if (args.debug != 0) {
         runtime_log_level = .debug;
     }
 
@@ -84,9 +84,9 @@ pub fn main() anyerror!void {
         } else {
             // Try to resolve xdg_config_home or home respectively and use their path's if possible.
             if (os.getenv("XDG_CONFIG_HOME")) |xdg_config_home| {
-                break :blk try fs.path.joinZ(allocator, &[_][]const u8{ xdg_config_home, "next/nextrc" });
+                break :blk try fs.path.joinZ(allocator, &.{ xdg_config_home, "next/nextrc" });
             } else if (os.getenv("HOME")) |home| {
-                break :blk try fs.path.joinZ(allocator, &[_][]const u8{ home, ".config/next/nextrc" });
+                break :blk try fs.path.joinZ(allocator, &.{ home, ".config/next/nextrc" });
             } else {
                 return;
             }
@@ -142,13 +142,13 @@ pub fn main() anyerror!void {
     const pid = try os.fork();
     if (pid == 0) {
         var errno = os.errno(c.setsid());
-        if (@enumToInt(errno) != 0) {
+        if (@intFromEnum(errno) != 0) {
             std.log.err("Setsid syscall failed: {any}", .{errno});
         }
 
         // SET_MASK sets the blocked signal to an empty signal set in this case.
         errno = os.errno(os.system.sigprocmask(os.SIG.SETMASK, &os.empty_sigset, null));
-        if (@enumToInt(errno) != 0) {
+        if (@intFromEnum(errno) != 0) {
             std.log.err("Sigprocmask syscall failed: {any}", .{errno});
         }
 
@@ -195,7 +195,7 @@ pub fn log(
     args: anytype,
 ) void {
     // If level of the message is higher than the message level specified then don't log it.
-    if (@enumToInt(level) > @enumToInt(runtime_log_level)) return;
+    if (@intFromEnum(level) > @intFromEnum(runtime_log_level)) return;
 
     // Performing some string formatting and then printing it.
     const level_txt = comptime toUpper(level.asText());
@@ -208,7 +208,7 @@ pub fn log(
 fn toUpper(comptime string: []const u8) *const [string.len:0]u8 {
     comptime {
         var tmp: [string.len:0]u8 = undefined;
-        for (tmp) |*char, i| char.* = std.ascii.toUpper(string[i]);
+        for (&tmp, 0..) |*char, i| char.* = std.ascii.toUpper(string[i]);
         return &tmp;
     }
 }

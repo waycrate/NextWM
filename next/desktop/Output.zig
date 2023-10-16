@@ -72,7 +72,7 @@ pub fn init(self: *Self, wlr_output: *wlr.Output) !void {
         .wlr_output = wlr_output,
     };
 
-    self.wlr_output.data = @ptrToInt(&self);
+    self.wlr_output.data = @intFromPtr(&self);
 
     // Add a callback for the frame event from the output struct.
     self.wlr_output.events.frame.add(&self.frame);
@@ -123,6 +123,7 @@ fn configure_node_decoration(self: *Self, node: *wlr.SceneNode) void {
                 shadow_data.enabled = true;
                 shadow_data.color.* = self.server.config.toplevel_box_shadow_color;
 
+                ////TODO: Configurable blur_sigma for shadow ;)
                 scene_buffer.setShadowData(shadow_data);
                 scene_buffer.setCornerRadius(self.server.config.toplevel_corner_radius);
             }
@@ -159,11 +160,11 @@ pub fn init_wallpaper_rendering(self: *Self) !void {
         return error.OOM;
     };
 
-    try self.wallpaper.?.cairo_buffer_create(@intCast(c_int, output_geometry.width), @intCast(c_int, output_geometry.height), @intCast(usize, stride), data);
+    try self.wallpaper.?.cairo_buffer_create(@as(c_int, @intCast(output_geometry.width)), @as(c_int, @intCast(output_geometry.height)), @as(usize, @intCast(stride)), data);
     errdefer allocator.destroy(self.wallpaper.?);
 
     self.wallpaper.?.scene_buffer = try self.server.layer_bg.createSceneBuffer(&self.wallpaper.?.base_buffer);
-    self.wallpaper.?.scene_buffer.?.node.setPosition(@intCast(c_int, output_geometry.x), @intCast(c_int, output_geometry.y));
+    self.wallpaper.?.scene_buffer.?.node.setPosition(@as(c_int, @intCast(output_geometry.x)), @as(c_int, @intCast(output_geometry.y)));
 }
 
 pub fn deinit_wallpaper(self: *Self) void {
@@ -262,10 +263,10 @@ pub fn getGeometry(self: *Self) struct { width: u64, height: u64, x: u64, y: u64
     self.wlr_output.effectiveResolution(&width, &height);
 
     return .{
-        .width = @intCast(u64, width),
-        .height = @intCast(u64, height),
-        .x = @floatToInt(u64, x),
-        .y = @floatToInt(u64, y),
+        .width = @as(u64, @intCast(width)),
+        .height = @as(u64, @intCast(height)),
+        .x = @as(u64, @intFromFloat(x)),
+        .y = @as(u64, @intFromFloat(y)),
     };
 }
 
@@ -287,5 +288,5 @@ pub fn getMake(self: *Self) [*:0]const u8 {
 
 pub fn getName(self: *Self) []const u8 {
     const name = self.wlr_output.name;
-    return std.mem.span(name);
+    return std.mem.sliceTo(name, 0);
 }

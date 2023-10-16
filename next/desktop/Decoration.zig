@@ -48,7 +48,7 @@ fn requestMode(listener: *wl.Listener(*wlr.XdgToplevelDecorationV1), _: *wlr.Xdg
     const self = @fieldParentPtr(Self, "request_mode", listener);
     log.debug("Signal: wlr_xdg_toplevel_decoration_request_mode", .{});
 
-    const window = @intToPtr(*Window, self.xdg_toplevel_decoration.surface.data);
+    const window = @as(*Window, @ptrFromInt(self.xdg_toplevel_decoration.surface.data));
 
     if (server.config.csdAllowed(window)) {
         _ = self.xdg_toplevel_decoration.setMode(.client_side);

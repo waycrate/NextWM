@@ -1,19 +1,19 @@
 const std = @import("std");
 
-pub fn build(builder: *std.build.Builder) !void {
+pub fn build(builder: *std.Build) !void {
     const protocols_path = "protocols";
     const include_path = "include";
     const src_path = "src";
 
     const target = builder.standardTargetOptions(.{});
-    const build_mode = builder.standardReleaseOptions();
+    const optimize = builder.standardOptimizeOption(.{});
 
     try generateProtocolFiles(builder, protocols_path, include_path, src_path);
 
-    var src_files = try getFiles(builder, src_path, .File);
+    var src_files = try getFiles(builder, src_path, .file);
     defer deinitFilesList(builder, &src_files);
 
-    const c_flags = &[_][]const u8{
+    const c_flags = &.{
         "-Wall",
         "-Wsign-conversion",
         "-Wunused-result",
@@ -32,24 +32,21 @@ pub fn build(builder: *std.build.Builder) !void {
         "-O3",
     };
 
-    const exe = builder.addExecutable("nextctl", null);
-    exe.setTarget(target);
-    exe.setBuildMode(build_mode);
-
+    const exe = builder.addExecutable(.{
+        .name = "nextctl",
+        .target = target,
+        .optimize = optimize,
+    });
     exe.addCSourceFiles(src_files.items, c_flags);
-
-    exe.addIncludePath(include_path);
+    exe.addIncludePath(.{ .path = include_path });
 
     exe.linkLibC();
     exe.linkSystemLibrary("wayland-client");
 
-    exe.install();
-
-    std.fs.cwd().makeDir("../zig-out") catch {};
-    builder.installFile("./zig-out/bin/nextctl", "../../zig-out/bin/nextctl");
+    builder.installArtifact(exe);
 }
 
-fn getFiles(builder: *std.build.Builder, dir_path: []const u8, file_kind: std.fs.File.Kind) !std.ArrayList([]const u8) {
+fn getFiles(builder: *std.Build, dir_path: []const u8, file_kind: std.fs.File.Kind) !std.ArrayList([]const u8) {
     var files = std.ArrayList([]const u8).init(builder.allocator);
     var dir = try std.fs.cwd().openIterableDir(dir_path, .{
         .access_sub_paths = true,
@@ -65,15 +62,15 @@ fn getFiles(builder: *std.build.Builder, dir_path: []const u8, file_kind: std.fs
     return files;
 }
 
-fn deinitFilesList(builder: *std.build.Builder, files: *std.ArrayList([]const u8)) void {
+fn deinitFilesList(builder: *std.Build, files: *std.ArrayList([]const u8)) void {
     for (files.items) |file| {
         builder.allocator.free(file);
     }
     files.deinit();
 }
 
-fn generateProtocolFiles(builder: *std.build.Builder, protocols_path: []const u8, include_path: []const u8, src_path: []const u8) !void {
-    var xml_files = try getFiles(builder, protocols_path, .SymLink);
+fn generateProtocolFiles(builder: *std.Build, protocols_path: []const u8, include_path: []const u8, src_path: []const u8) !void {
+    var xml_files = try getFiles(builder, protocols_path, .sym_link);
     defer deinitFilesList(builder, &xml_files);
 
     for (xml_files.items) |xml_file| {
@@ -85,7 +82,7 @@ fn generateProtocolFiles(builder: *std.build.Builder, protocols_path: []const u8
             const header_file = try std.mem.replaceOwned(u8, builder.allocator, header_file_name, protocols_path, include_path);
             defer builder.allocator.free(header_file);
 
-            _ = try builder.exec(&[_][]const u8{ "wayland-scanner", "client-header", xml_file, header_file });
+            _ = builder.exec(&.{ "wayland-scanner", "client-header", xml_file, header_file });
         }
 
         // .c generation
@@ -96,7 +93,7 @@ fn generateProtocolFiles(builder: *std.build.Builder, protocols_path: []const u8
             const src_file = try std.mem.replaceOwned(u8, builder.allocator, src_file_name, protocols_path, src_path);
             defer builder.allocator.free(src_file);
 
-            _ = try builder.exec(&[_][]const u8{ "wayland-scanner", "private-code", xml_file, src_file });
+            _ = builder.exec(&.{ "wayland-scanner", "private-code", xml_file, src_file });
         }
     }
 }

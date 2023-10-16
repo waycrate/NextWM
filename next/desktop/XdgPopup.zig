@@ -51,7 +51,7 @@ pub fn create(xdg_popup: *wlr.XdgPopup, parent: ParentSurface) ?*Self {
         .server = server,
     };
 
-    if (xdg_popup.base.data == 0) xdg_popup.base.data = @ptrToInt(self);
+    if (xdg_popup.base.data == 0) xdg_popup.base.data = @intFromPtr(self);
 
     switch (parent) {
         .xdg_toplevel => |xdg_toplevel| {
@@ -62,8 +62,8 @@ pub fn create(xdg_popup: *wlr.XdgPopup, parent: ParentSurface) ?*Self {
             var ly: f64 = 0;
             self.server.output_layout.wlr_output_layout.closestPoint(
                 null,
-                @intToFloat(f64, xdg_toplevel.geometry.x + box.x),
-                @intToFloat(f64, xdg_toplevel.geometry.y + box.y),
+                @as(f64, @floatFromInt(xdg_toplevel.geometry.x + box.x)),
+                @as(f64, @floatFromInt(xdg_toplevel.geometry.y + box.y)),
                 &lx,
                 &ly,
             );
@@ -78,8 +78,8 @@ pub fn create(xdg_popup: *wlr.XdgPopup, parent: ParentSurface) ?*Self {
                 return null;
             }
             self.output_box = wlr.Box{
-                .x = box.x - @floatToInt(c_int, lx),
-                .y = box.y - @floatToInt(c_int, ly),
+                .x = box.x - @as(c_int, @intFromFloat(lx)),
+                .y = box.y - @as(c_int, @intFromFloat(ly)),
                 .width = width,
                 .height = height,
             };

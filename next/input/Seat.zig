@@ -124,8 +124,8 @@ pub fn focusOutput(self: *Self, output: *Output) void {
         if (!layout_box.containsPoint(self.server.wlr_cursor.x, self.server.wlr_cursor.y)) {
             const geometry = output.getGeometry();
 
-            const lx = @intToFloat(f32, layout_box.x + @intCast(i32, geometry.width / 2));
-            const ly = @intToFloat(f32, layout_box.y + @intCast(i32, geometry.height / 2));
+            const lx = @as(f32, @floatFromInt(layout_box.x + @as(i32, @intCast(geometry.width / 2))));
+            const ly = @as(f32, @floatFromInt(layout_box.y + @as(i32, @intCast(geometry.height / 2))));
             if (!self.server.wlr_cursor.warp(null, lx, ly)) {
                 log.err("Failed to warp cursor on output change", .{});
             }

@@ -18,7 +18,7 @@ pub fn build(builder: *std.build.Builder, docs_dir: []const u8) !void {
 
     var iterator = dir.iterate();
     while (try iterator.next()) |entry| {
-        if (entry.kind == .File) {
+        if (entry.kind == .file) {
             if (std.mem.lastIndexOfScalar(u8, entry.name, '.')) |idx| {
                 if (std.mem.eql(u8, entry.name[idx..], ".scd")) {
                     const p = try std.fmt.allocPrint(allocator, "{s}{s}", .{ docs_dir, entry.name });
@@ -43,8 +43,8 @@ pub fn build(builder: *std.build.Builder, docs_dir: []const u8) !void {
                         .{ p, path },
                     );
                     defer allocator.free(cmd);
-                    _ = try builder.exec(&[_][]const u8{ "sh", "-c", cmd });
 
+                    _ = builder.exec(&.{ "sh", "-c", cmd });
                     builder.installFile(path, output);
                 }
             }
