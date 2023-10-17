@@ -11,10 +11,10 @@ sources:
 
 tasks:
     - build: |
-          cd NextWM; nix develop --command make
+          cd NextWM; nix develop --command zig build
 
     - build-xwayland: |
-          cd NextWM; nix develop --command make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy"
+          cd NextWM; nix develop --command zig build -Dxwayland -Dxwayland-lazy
 
     - build-rs: |
           cd NextWM; nix develop --command make -C ./nextctl-rs

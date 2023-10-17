@@ -1,5 +1,5 @@
-PREFIX=/usr
-BUILD_FLAGS =
+PREFIX:=/usr
+BUILD_FLAGS:=
 
 build:
 	zig build $(BUILD_FLAGS)

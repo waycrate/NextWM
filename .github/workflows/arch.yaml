@@ -55,11 +55,11 @@ jobs:
 
             - name: Build NextWM
               run: |
-                  make
+                  zig build
 
             - name: Build NextWM-Xwayland
               run: |
-                  make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy"
+                  zig build -Dxwayland -Dxwayland-lazy
 
             - name: Build Nextctl-rs
               run: |

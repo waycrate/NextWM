@@ -22,11 +22,11 @@ jobs:
 
             - name: Build NextWM
               run: |
-                  nix develop --command make
+                  nix develop --command zig build
 
             - name: Build NextWM-Xwayland
               run: |
-                  nix develop --command make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy"
+                  nix develop --command zig build -Dxwayland -Dxwayland-lazy
 
             - name: Build Nextctl-rs
               run: |

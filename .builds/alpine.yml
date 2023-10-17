@@ -61,10 +61,10 @@ tasks:
           sudo mv ./zig-linux-x86_64-$ZIG_VERSION/lib /usr/lib/zig
 
     - build: |
-          make -C NextWM
+          cd NextWM; zig build
 
     - build-xwayland: |
-          make BUILD_FLAGS="-Dxwayland -Dxwayland-lazy" -C NextWM
+          cd NextWM; zig build -Dxwayland -Dxwayland-lazy
 
     - build-rs: |
           make -C NextWM/nextctl-rs
