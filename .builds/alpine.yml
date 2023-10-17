@@ -38,11 +38,6 @@ tasks:
           WAYLAND_VERSION=1.21.0
           WLROOTS_VERSION=0.16.0
 
-          cd scenefx
-          meson setup build --auto-features enabled --reconfigure -Dwerror=false -Dexamples=false
-          ninja -C build install
-          cd ..
-
           cd wayland
           git checkout $WAYLAND_VERSION
           meson setup build -Ddocumentation=false -Dtests=false --prefix /usr
@@ -53,6 +48,11 @@ tasks:
           git checkout $WLROOTS_VERSION
           meson setup build --auto-features=enabled -Drenderers=gles2 -Dexamples=false -Dwerror=false -Db_ndebug=false -Dxcb-errors=disabled --prefix /usr
           sudo ninja -C build install
+          cd ..
+
+          cd scenefx
+          meson setup build --auto-features enabled --reconfigure -Dwerror=false -Dexamples=false
+          ninja -C build install
           cd ..
 
           wget -nv https://ziglang.org/download/$ZIG_VERSION/zig-linux-x86_64-$ZIG_VERSION.tar.xz

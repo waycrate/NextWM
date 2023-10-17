@@ -22,12 +22,6 @@ jobs:
                   WAYLAND_VERSION=1.21.0
                   WLROOTS_VERSION=0.16.0
 
-                  git clone https://github.com/wlrfx/scenefx.git
-                  cd scenefx
-                  meson setup build --auto-features enabled --reconfigure -Dwerror=false -Dexamples=false
-                  ninja -C build install
-                  cd ..
-
                   git clone https://gitlab.freedesktop.org/wayland/wayland.git
                   cd wayland
                   git checkout $WAYLAND_VERSION
@@ -41,6 +35,13 @@ jobs:
                   meson setup build --auto-features=enabled -Drenderers=gles2 -Dexamples=false -Dwerror=false -Db_ndebug=false --prefix /usr
                   ninja -C build install
                   cd ..
+
+                  git clone https://github.com/wlrfx/scenefx.git
+                  cd scenefx
+                  meson setup build --auto-features enabled --reconfigure -Dwerror=false -Dexamples=false
+                  ninja -C build install
+                  cd ..
+
 
                   wget -nv https://ziglang.org/download/$ZIG_VERSION/zig-linux-x86_64-$ZIG_VERSION.tar.xz
                   tar -xvf zig-linux-x86_64-$ZIG_VERSION.tar.xz 1>/dev/null
