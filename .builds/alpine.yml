@@ -52,7 +52,7 @@ tasks:
 
           cd scenefx
           meson setup build --auto-features enabled --reconfigure -Dwerror=false -Dexamples=false
-          ninja -C build install
+          sudo ninja -C build install
           cd ..
 
           wget -nv https://ziglang.org/download/$ZIG_VERSION/zig-linux-x86_64-$ZIG_VERSION.tar.xz
