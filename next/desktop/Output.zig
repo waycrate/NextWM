@@ -129,10 +129,10 @@ fn configure_node_decoration(self: *Self, node: *wlr.SceneNode) void {
             }
         }
     } else if (node.type == .tree) {
-        const tree = @fieldParentPtr(wlr.SceneTree, "node", node);
+        const tree = node.parent orelse return;
         var it = tree.children.safeIterator(.forward);
         while (it.next()) |scene_node| {
-            configure_node_decoration(self, scene_node);
+            self.configure_node_decoration(scene_node);
         }
     }
 }
@@ -280,7 +280,7 @@ pub fn getDescription(self: *Self) [*:0]const u8 {
 
 pub fn getMake(self: *Self) [*:0]const u8 {
     if (self.wlr_output.make) |make| {
-        return make.*;
+        return make;
     } else {
         return "<No output make found>";
     }

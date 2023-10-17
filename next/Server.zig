@@ -461,8 +461,8 @@ fn setMode(listener: *wl.Listener(*wlr.OutputPowerManagerV1.event.SetMode), even
 
 fn logInfo() void {
     const uname_info = std.os.uname();
-    std.log.info("System name: {s}", .{uname_info.sysname});
-    std.log.info("Host name: {s}", .{uname_info.nodename});
-    std.log.info("Release Info: {s}", .{uname_info.release});
-    std.log.info("Version Info: {s}", .{uname_info.version});
+    log.info("System name: {s}", .{uname_info.sysname});
+    log.info("Host name: {s}", .{uname_info.nodename});
+    log.info("Release Info: {s}", .{uname_info.release});
+    log.info("Version Info: {s}", .{uname_info.version});
 }

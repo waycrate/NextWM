@@ -12,19 +12,10 @@ stdenv.mkDerivation rec {
     hash = "sha256-c/zRWz6njC3RsHzIcWpd5m7CXGprrIhKENpaQVH7Owk=";
   };
 
-  nativeBuildInputs = [ meson ninja cmake pkg-config ];
+  nativeBuildInputs = [ wlroots_0_16 meson ninja cmake pkg-config ];
 
-  buildInputs = [
-    wlroots_0_16
-    wayland
-    libdrm
-    libxkbcommon
-    udev
-    pixman
-    wayland-protocols
-    libGL
-    mesa
-  ];
+  buildInputs =
+    [ wayland libdrm libxkbcommon udev pixman wayland-protocols libGL mesa ];
 
   meta = with lib; {
     description =

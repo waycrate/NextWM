@@ -133,7 +133,7 @@ pub fn main() anyerror!void {
     try os.sigaction(os.SIG.PIPE, &sig_ign, null);
 
     // Attempt to initialize the server, deinitialize it once the block ends.
-    std.log.info("Initializing server", .{});
+    std.log.scoped(.Next).info("Initializing server", .{});
     try server.init();
     defer server.deinit();
     try server.start();

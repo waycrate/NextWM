@@ -20,7 +20,6 @@
             name = "NextWM-devel";
 
             nativeBuildInputs = with pkgs; [
-              (callPackage ./scenefx.nix { })
               # Compilers
               cargo
               go
@@ -30,7 +29,6 @@
 
               # Libs
               cairo
-              mesa
               hwdata
               libGL
               libdrm
@@ -38,14 +36,17 @@
               libinput
               libjpeg
               libxkbcommon
+              mesa
               pixman
               stdenv
               udev
               wayland
               wayland-protocols
               wlroots_0_16
+              (callPackage ./scenefx.nix { })
 
               # Tools
+              clang-tools
               cmake
               gdb
               gnumake
