@@ -21,6 +21,7 @@
 
             nativeBuildInputs = with pkgs; [
               (callPackage ./scenefx.nix { })
+              (callPackage ./wlroots.nix { })
               # Compilers
               cargo
               go
@@ -43,10 +44,10 @@
               udev
               wayland
               wayland-protocols
-              wlroots_0_16
 
               # Tools
               cmake
+              clang-tools
               gdb
               gnumake
               gopls
