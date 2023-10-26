@@ -2,14 +2,12 @@
 //
 // build.zig
 //
-// Created by:	Aakash Sen Sharma, May 2022
+// Created by:	Aakash Sen Sharma, May 2023
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const std = @import("std");
 
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-pub const allocator = gpa.allocator();
-
+const NextctlStep = @import("nextctl.zig");
 const Scdoc = @import("scdoc.zig");
 const Nextctl = @import("nextctl.zig");
 const Scanner = @import("deps/zig-wayland/build.zig").Scanner;
@@ -17,7 +15,6 @@ const Scanner = @import("deps/zig-wayland/build.zig").Scanner;
 const version = "0.1.0-dev";
 
 pub fn build(builder: *std.Build) !void {
-    defer _ = gpa.deinit();
     const target = builder.standardTargetOptions(.{});
     const optimize = builder.standardOptimizeOption(.{});
 
@@ -116,26 +113,20 @@ pub fn build(builder: *std.Build) !void {
 
     // Nextctl Installation
     {
-        // Abandoned nextctl step as zig build steps felt confusing and were very racy..
-        // There should be an option to disable parallelized builds :(
-        if (nextctl_rs and nextctl_go) {
-            @panic("Please choose only 1 Nextctl Implementation.");
-        } else if (nextctl_rs) {
-            try Nextctl.syncVersion("version = ", "nextctl-rs/Cargo.toml", version);
-            _ = builder.exec(&.{ "make", "-C", "nextctl-rs" });
+        const build_type: NextctlStep.BuildType = blk: {
+            if (nextctl_rs and nextctl_go) {
+                @panic("Please choose only 1 Nextctl Implementation.");
+            } else if (nextctl_rs) {
+                break :blk .rust;
+            } else if (nextctl_go) {
+                break :blk .go;
+            } else {
+                break :blk .c;
+            }
+        };
 
-            builder.installFile("./nextctl-rs/target/release/nextctl", "bin/nextctl");
-        } else if (nextctl_go) {
-            try Nextctl.syncVersion("const VERSION = ", "nextctl-go/cmd/nextctl/nextctl.go", version);
-            _ = builder.exec(&.{ "make", "-C", "nextctl-go" });
-
-            builder.installFile("./nextctl-go/nextctl", "bin/nextctl");
-        } else {
-            try Nextctl.syncVersion("#define VERSION ", "nextctl/include/nextctl.h", version);
-            _ = builder.exec(&.{ "make", "-C", "nextctl" });
-
-            builder.installFile("./nextctl/zig-out/bin/nextctl", "bin/nextctl");
-        }
+        const nextctl = try NextctlStep.init(builder, build_type, version);
+        try nextctl.install();
     }
 
     // Pkgconfig installation.

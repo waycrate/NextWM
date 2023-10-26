@@ -6,7 +6,6 @@
 // Copyright:	(C) 2022, Aakash Sen Sharma & Contributors
 
 const std = @import("std");
-const allocator = @import("build.zig").allocator;
 
 pub fn build(builder: *std.build.Builder, docs_dir: []const u8) !void {
     var dir = try std.fs.cwd().openIterableDir(docs_dir, .{
@@ -21,28 +20,23 @@ pub fn build(builder: *std.build.Builder, docs_dir: []const u8) !void {
         if (entry.kind == .file) {
             if (std.mem.lastIndexOfScalar(u8, entry.name, '.')) |idx| {
                 if (std.mem.eql(u8, entry.name[idx..], ".scd")) {
-                    const p = try std.fmt.allocPrint(allocator, "{s}{s}", .{ docs_dir, entry.name });
-                    defer allocator.free(p);
-
-                    const path = try std.fmt.allocPrint(allocator, "{s}.gz", .{p[0..(p.len - 4)]});
-                    defer allocator.free(path);
+                    const p = try std.fmt.allocPrint(builder.allocator, "{s}{s}", .{ docs_dir, entry.name });
+                    const path = try std.fmt.allocPrint(builder.allocator, "{s}.gz", .{p[0..(p.len - 4)]});
 
                     const path_no_ext = path[0..(path.len - 3)];
                     const section = path_no_ext[(path_no_ext.len - 1)..];
 
                     const output = try std.fmt.allocPrint(
-                        allocator,
+                        builder.allocator,
                         "share/man/man{s}/{s}",
                         .{ section, std.fs.path.basename(path) },
                     );
-                    defer allocator.free(output);
 
                     const cmd = try std.fmt.allocPrint(
-                        allocator,
+                        builder.allocator,
                         "scdoc < {s} > {s}",
                         .{ p, path },
                     );
-                    defer allocator.free(cmd);
 
                     _ = builder.exec(&.{ "sh", "-c", cmd });
                     builder.installFile(path, output);
