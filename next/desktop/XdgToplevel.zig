@@ -92,16 +92,8 @@ pub fn handleMap(listener: *wl.Listener(void)) void {
     self.scene_surface = self.scene_tree.createSceneXdgSurface(self.xdg_surface) catch return;
     self.xdg_surface.getGeometry(&self.geometry);
 
-    //TODO: In the next zig release, `for (0..10) |i|` should be stabilized.
-    // Use that everywhere it's a +1 increment and you're using this while mess.
-    //
-    // NOTE: Zig doesn't have the standard C style for loops. You're expected to do that with while.
-    // `for` is just for iterators.
-
-    // Looping over 4 times to create the top, bottom, left, and right borders.
-    comptime var j: usize = 0;
-    inline while (j <= 3) : (j += 1) {
-        self.borders[j] = self.scene_tree.createSceneRect(0, 0, &server.config.border_color) catch return;
+    inline for (0..4) |i| {
+        self.borders[i] = self.scene_tree.createSceneRect(0, 0, &server.config.border_color) catch return;
     }
 
     // If the client can have csd then why draw servide side borders?
