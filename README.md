@@ -17,8 +17,7 @@ The entire project is licensed as BSD-2 "Simplified" unless stated otherwise in 
 
 ## Aim
 
-I want to learn how to write wlroots compositors with this project and keep everything commented to a great extent for others to learn from.
-The wlroots ecosystem is hard to initially get into as per my experience and I want to change that via NextWM.
+I want to learn how to write wlroots compositors with this project.
 
 ## Why multiple implementations of Nextctl?
 

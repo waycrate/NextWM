@@ -94,18 +94,15 @@ request_activate: wl.Listener(*wlr.XdgActivationV1.event.RequestActivate),
 pub fn init(self: *Self) !void {
     logInfo();
 
-    // Creating the server itself.
     self.wl_server = try wl.Server.create();
     errdefer self.wl_server.destroy();
 
-    // Incorporate signal handling into the wayland event loop.
     self.wl_event_loop = self.wl_server.getEventLoop();
     self.sigabrt_cb = try self.wl_event_loop.addSignal(*wl.Server, std.os.SIG.ABRT, terminateCb, self.wl_server);
     self.sigint_cb = try self.wl_event_loop.addSignal(*wl.Server, std.os.SIG.INT, terminateCb, self.wl_server);
     self.sigquit_cb = try self.wl_event_loop.addSignal(*wl.Server, std.os.SIG.QUIT, terminateCb, self.wl_server);
     self.sigterm_cb = try self.wl_event_loop.addSignal(*wl.Server, std.os.SIG.TERM, terminateCb, self.wl_server);
 
-    // Determine the backend based on the current environment to render with such as opening an X11 window if an X11 server is running.
     // NOTE: This frees itself when the server is destroyed.
     self.wlr_backend = try wlr.Backend.autocreate(self.wl_server);
 
@@ -113,60 +110,41 @@ pub fn init(self: *Self) !void {
     // NOTE: This frees itself when server is destroyed.
     self.wlr_headless_backend = try wlr.Backend.createHeadless(self.wl_server);
 
-    // Creating the renderer.
     self.wlr_renderer = try wlr.Renderer.autocreate(self.wlr_backend);
     errdefer self.wlr_renderer.destroy();
 
-    // Autocreate an allocator. An allocator acts as a bridge between the renderer and the backend allowing us to render to the screen by handling buffer creation.
     self.wlr_allocator = try wlr.Allocator.autocreate(self.wlr_backend, self.wlr_renderer);
     errdefer self.wlr_allocator.destroy();
 
-    // Create the compositor from the server and renderer.
     self.wlr_compositor = try wlr.Compositor.create(self.wl_server, self.wlr_renderer);
     _ = try wlr.Subcompositor.create(self.wl_server);
 
     //NOTE: This has to be initialized as one of the first wayland globals inorder to not crash on middle-button paste in gtk3...ugh.
     _ = try wlr.PrimarySelectionDeviceManagerV1.create(self.wl_server);
 
-    // Create foreign toplevel manager
     self.wlr_foreign_toplevel_manager = try wlr.ForeignToplevelManagerV1.create(self.wl_server);
 
-    // Creating a scene graph. This handles the servers rendering and damage tracking.
     self.wlr_scene = try wlr.Scene.create();
 
-    // Create an output layout to work with the physical arrangement of screens.
     try self.output_layout.init();
 
     self.wlr_output_manager = try wlr.OutputManagerV1.create(self.wl_server);
     _ = try wlr.XdgOutputManagerV1.create(self.wl_server, self.output_layout.wlr_output_layout);
 
-    // Create a wlr cursor object which is a wlroots utility to track the cursor on the screen.
     self.wlr_cursor = try wlr.Cursor.create();
     errdefer self.wlr_cursor.destroy();
 
-    // Create xdg_activation_v1
     self.wlr_xdg_activation_v1 = try wlr.XdgActivationV1.create(self.wl_server);
 
-    // Create a Xcursor manager which loads up xcursor themes on all scale factors. We pass null for theme name and 24 for the cursor size.
     self.wlr_xcursor_manager = try wlr.XcursorManager.create(null, default_cursor_size);
     errdefer self.wlr_xcursor_manager.destroy();
 
-    // Load cursors at scale factor 1.
     try self.wlr_xcursor_manager.load(1);
 
-    // Creating a xdg_shell which is a wayland protocol for application windows.
     self.wlr_xdg_shell = try wlr.XdgShell.create(self.wl_server, 5);
-
-    // Creating a layer shell which is a wlroots protocol for layered textres
-    // such as wallpapers and bars which are drawn *over* other windows.
     self.wlr_layer_shell = try wlr.LayerShellV1.create(self.wl_server);
-
-    // Creating the OutputPowerV1 protocol manager. This protocol is used by
-    // tools such as wayout (https://github.com/waycrate/wayout) which manage output states
-    // (on / off).
     self.wlr_power_manager = try wlr.OutputPowerManagerV1.create(self.wl_server);
 
-    // Creating the seat.
     try self.seat.init();
 
     // Creating toplevel layers:
@@ -179,23 +157,16 @@ pub fn init(self: *Self) !void {
     self.layer_tile = try self.wlr_scene.tree.createSceneTree();
     self.layer_top = try self.wlr_scene.tree.createSceneTree();
 
-    // Initializing Xwayland.
     if (build_options.xwayland) {
         self.wlr_xwayland = try wlr.Xwayland.create(self.wl_server, self.wlr_compositor, build_options.xwayland_lazy);
         self.wlr_xwayland.setSeat(self.seat.wlr_seat);
     }
 
-    // Initialize wl_shm, linux-dmabuf and other buffer factory protocols.
     try self.wlr_renderer.initServer(self.wl_server);
-
-    // Attach the output layout to the scene graph so we get automatic damage tracking.
     try self.wlr_scene.attachOutputLayout(self.output_layout.wlr_output_layout);
-
-    // Attach the cursor to the output layout.
     self.wlr_cursor.attachOutputLayout(self.output_layout.wlr_output_layout);
 
     // NOTE: These all free themselves when wlr_server is destroy.
-    // Create the data device manager from the server, this generally handles the input events such as keyboard, mouse, touch etc.
     _ = try wlr.DataControlManagerV1.create(self.wl_server);
     _ = try wlr.DataDeviceManager.create(self.wl_server);
     _ = try wlr.ExportDmabufManagerV1.create(self.wl_server);
@@ -209,42 +180,31 @@ pub fn init(self: *Self) !void {
     try self.input_manager.init();
     self.config = Config.init();
 
-    // Assign the new output callback to said event.
-    //
-    // zig only intializes structs with default value when using .{} notation. Since were not using that, we call `.setNotify`. In other instances
-    // we use `.init` on the listener declaration directly.
     self.new_output.setNotify(newOutput);
     self.wlr_backend.events.new_output.add(&self.new_output);
 
-    // Add a callback for when new surfaces are created.
     self.new_xdg_surface.setNotify(newXdgSurface);
     self.wlr_xdg_shell.events.new_surface.add(&self.new_xdg_surface);
 
-    // Add a callback for when clients want to set output power mode.
     self.set_mode.setNotify(setMode);
     self.wlr_power_manager.events.set_mode.add(&self.set_mode);
 
-    // Add a callback for when a new layer surface is created.
     self.new_layer_surface.setNotify(newLayerSurface);
     self.wlr_layer_shell.events.new_surface.add(&self.new_layer_surface);
 
     self.request_activate.setNotify(requestActivate);
     self.wlr_xdg_activation_v1.events.request_activate.add(&self.request_activate);
 
-    // Add a callback when a xwayland surface is created.
     if (build_options.xwayland) {
         self.new_xwayland_surface.setNotify(newXwaylandSurface);
         self.wlr_xwayland.events.new_surface.add(&self.new_xwayland_surface);
     }
 }
 
-// Create the socket, start the backend, and setup the environment
 pub fn start(self: *Self) !void {
-    // We create a slice of 11 u8's ( practically a string buffer ) in which we store the socket value to be pushed later onto the env_map.
     var buf: [11]u8 = undefined;
     const socket = try self.wl_server.addSocketAuto(&buf);
 
-    // Set the wayland_display environment variable.
     if (c.setenv("WAYLAND_DISPLAY", socket.ptr, 1) < 0) return error.SetenvError;
     if (build_options.xwayland) if (c.setenv("DISPLAY", self.wlr_xwayland.display_name, 1) < 0) return error.SetenvError;
 
@@ -341,7 +301,6 @@ fn requestActivate(
 
 // Callback that gets triggered on existence of a new output.
 fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
-    // Allocate memory to a new instance of output struct.
     log.debug("Signal: wlr_backend_new_output", .{});
     const output = allocator.create(Output) catch {
         std.log.err("Failed to allocate new output", .{});
@@ -359,14 +318,7 @@ fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
     };
 }
 
-// This callback is called when a new xdg toplevel is created ( xdg toplevels are basically application windows. )
 fn newXdgSurface(listener: *wl.Listener(*wlr.XdgSurface), xdg_surface: *wlr.XdgSurface) void {
-    // The role of the surface can be of 2 types:
-    // - xdg_toplevel
-    // - xdg_popup
-    //
-    // Popups include context menus and other floating windows that are in respect to any particular toplevel.
-    // We only want to manage toplevel here, popups will be managed separately.
     const self = @fieldParentPtr(Self, "new_xdg_surface", listener);
     log.debug("Signal: wlr_xdg_shell_new_surface", .{});
     if (xdg_surface.role == .toplevel) {

@@ -44,13 +44,11 @@ pub fn main() anyerror!void {
     var args = res.args;
     defer res.deinit();
 
-    // Print help message if requested.
     if (args.help != 0) {
         try stderr.writeAll("Usage: next [options]\n");
         return clap.help(stderr, clap.Help, &params, .{});
     }
 
-    // Print version information if requested.
     if (args.version != 0) {
         try stdout.print("Next version: {s}\n", .{build_options.version});
         return;
@@ -60,7 +58,6 @@ pub fn main() anyerror!void {
         runtime_log_level = .debug;
     }
 
-    //Fetch the log level specified or fallback to info.
     if (args.level) |level| {
         if (mem.eql(u8, level, std.log.Level.err.asText())) {
             runtime_log_level = .err;
@@ -76,13 +73,10 @@ pub fn main() anyerror!void {
         }
     }
 
-    // Fetching the startup command.
     const startup_command = blk: {
-        // If command flag is mentioned, use it.
         if (args.command) |command| {
             break :blk try allocator.dupeZ(u8, command);
         } else {
-            // Try to resolve xdg_config_home or home respectively and use their path's if possible.
             if (os.getenv("XDG_CONFIG_HOME")) |xdg_config_home| {
                 break :blk try fs.path.joinZ(allocator, &.{ xdg_config_home, "next/nextrc" });
             } else if (os.getenv("HOME")) |home| {
@@ -94,11 +88,10 @@ pub fn main() anyerror!void {
     };
     defer allocator.free(startup_command);
 
-    // accessZ takes a null terminated strings and checks against the mentioned bit.
-    // X_OK is the executable bit.
+    // X_OK -> executable bit.
     os.accessZ(startup_command, os.X_OK) catch |err| {
         if (err == error.PermissionDenied) {
-            // R_OK stands for the readable bit
+            // R_OK -> readable bit
             if (os.accessZ(startup_command, os.R_OK)) {
                 // If the file is readable but cannot be executed then it must not have the execution bit set.
                 std.log.err("Failed to run nextrc file: {s}\nPlease mark the file executable with the following command:\n    chmod +x {s}", .{ startup_command, startup_command });
@@ -115,7 +108,6 @@ pub fn main() anyerror!void {
         return;
     }
 
-    // Initializing wlroots log utility with debug level.
     // TODO: Remove this entirely when zig gets good var-arg support.
     wlr_fmt_log(switch (runtime_log_level) {
         .debug => .debug,
@@ -132,13 +124,12 @@ pub fn main() anyerror!void {
     };
     try os.sigaction(os.SIG.PIPE, &sig_ign, null);
 
-    // Attempt to initialize the server, deinitialize it once the block ends.
     std.log.scoped(.Next).info("Initializing server", .{});
     try server.init();
     defer server.deinit();
+
     try server.start();
 
-    // Fork into a child process.
     const pid = try os.fork();
     if (pid == 0) {
         var errno = os.errno(c.setsid());
@@ -194,17 +185,14 @@ pub fn log(
     comptime format: []const u8,
     args: anytype,
 ) void {
-    // If level of the message is higher than the message level specified then don't log it.
     if (@intFromEnum(level) > @intFromEnum(runtime_log_level)) return;
 
-    // Performing some string formatting and then printing it.
     const level_txt = comptime toUpper(level.asText());
     const scope_txt = "[" ++ @tagName(scope) ++ "] ";
 
     stderr.print(scope_txt ++ "(" ++ level_txt ++ ") " ++ format ++ "\n", args) catch {};
 }
 
-// Takes a string, uppercases it and returns a sentinel terminated string.
 fn toUpper(comptime string: []const u8) *const [string.len:0]u8 {
     comptime {
         var tmp: [string.len:0]u8 = undefined;
