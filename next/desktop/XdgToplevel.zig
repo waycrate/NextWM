@@ -189,7 +189,7 @@ pub fn handleUnmap(listener: *wl.Listener(void)) void {
     }
     if (server.seat.wlr_seat.pointer_state.focused_surface) |focused_surface| {
         if (focused_surface == self.xdg_surface.surface) {
-            server.seat.wlr_seat.keyboardClearFocus();
+            server.seat.wlr_seat.pointerClearFocus();
         }
     }
 }
