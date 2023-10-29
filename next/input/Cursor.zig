@@ -115,6 +115,10 @@ pub fn handleButton(listener: *wl.Listener(*wlr.Pointer.event.Button), event: *w
     log.debug("Signal: wlr_pointer_button", .{});
 
     _ = self.server.seat.wlr_seat.pointerNotifyButton(event.time_msec, event.button, event.state);
+
+    if (Window.windowAt(self.server.wlr_cursor.x, self.server.wlr_cursor.y)) |window_data| {
+        self.server.seat.setFocus(window_data.window, window_data.surface);
+    }
 }
 
 pub fn handleFrame(listener: *wl.Listener(*wlr.Cursor), _: *wlr.Cursor) void {
@@ -146,11 +150,14 @@ pub fn processCursorMotion(self: *Self, time_msec: u32) void {
     //TODO: Handle cursor modes like move, resize, etc
     // for now we do very basic handling of a passthrough mode.
 
+    // Passthrough mode.
     if (Window.windowAt(self.server.wlr_cursor.x, self.server.wlr_cursor.y)) |window_data| {
         self.server.seat.wlr_seat.pointerNotifyEnter(window_data.surface, window_data.sx, window_data.sy);
         self.server.seat.wlr_seat.pointerNotifyMotion(time_msec, window_data.sx, window_data.sy);
 
-        self.server.seat.setFocus(window_data.window, window_data.surface);
+        if (self.server.config.focus_is_sloppy) {
+            self.server.seat.setFocus(window_data.window, window_data.surface);
+        }
     } else {
         self.server.wlr_xcursor_manager.setCursorImage("left_ptr", self.server.wlr_cursor);
         self.server.seat.wlr_seat.pointerClearFocus();

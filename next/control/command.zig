@@ -44,6 +44,7 @@ const commands = std.ComptimeStringMap(
         .{ "set-repeat-rate",               inputs.setRepeat         },
         .{ "warp-cursor",                   cursor.warpCursor        },
         .{ "hide-cursor",                   cursor.hideCursor        },
+        .{ "sloppy-focus",                  cursor.setSloppyFocus    },
     },
 );
 // zig fmt: on

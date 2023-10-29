@@ -48,3 +48,21 @@ pub fn warpCursor(
         out.* = try std.fmt.allocPrint(allocator, "Failed to parse provided state.\n", .{});
     }
 }
+
+pub fn setSloppyFocus(
+    args: []const [:0]const u8,
+    out: *?[]const u8,
+) !void {
+    if (args.len < 2) return Error.NotEnoughArguments;
+    if (args.len > 2) return Error.TooManyArguments;
+
+    if (std.mem.eql(u8, "true", args[1])) {
+        server.config.focus_is_sloppy = true;
+    } else if (std.mem.eql(u8, "false", args[1])) {
+        server.config.focus_is_sloppy = false;
+    } else if (std.mem.eql(u8, "toggle", args[1])) {
+        server.config.focus_is_sloppy = !server.config.focus_is_sloppy;
+    } else {
+        out.* = try std.fmt.allocPrint(allocator, "Failed to parse focus state: {s}\n", .{args[1]});
+    }
+}
