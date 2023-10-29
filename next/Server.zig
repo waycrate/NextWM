@@ -46,7 +46,7 @@ control: Control,
 decoration_manager: DecorationManager,
 input_manager: InputManager,
 output_layout: OutputLayout,
-seat: *Seat,
+seat: Seat,
 
 // Layers
 layer_bg: *wlr.SceneTree,
@@ -167,9 +167,7 @@ pub fn init(self: *Self) !void {
     self.wlr_power_manager = try wlr.OutputPowerManagerV1.create(self.wl_server);
 
     // Creating the seat.
-    const seat = try allocator.create(Seat);
-    try seat.init();
-    self.seat = seat;
+    try self.seat.init();
 
     // Creating toplevel layers:
     self.layer_bg = try self.wlr_scene.tree.createSceneTree();
@@ -349,7 +347,7 @@ fn newOutput(_: *wl.Listener(*wlr.Output), wlr_output: *wlr.Output) void {
         std.log.err("Failed to allocate new output", .{});
         return;
     };
-    errdefer allocator.free(output);
+    errdefer allocator.destroy(output);
 
     // Instantiate the output struct.
     // TODO: Reminder to use this pattern and clean up similar memory leaks.
