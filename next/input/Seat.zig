@@ -42,7 +42,6 @@ request_start_drag: wl.Listener(*wlr.Seat.event.RequestStartDrag) = wl.Listener(
 
 request_set_cursor: wl.Listener(*wlr.Seat.event.RequestSetCursor) = wl.Listener(*wlr.Seat.event.RequestSetCursor).init(requestSetCursor),
 
-/// Memory allocated for the seat is free'd from the deinit call.
 pub fn init(self: *Self) !void {
     const seat = try wlr.Seat.create(server.wl_server, default_seat_name);
     self.* = .{
@@ -57,7 +56,6 @@ pub fn init(self: *Self) !void {
 
 pub fn deinit(self: *Self) void {
     self.wlr_seat.destroy();
-    allocator.destroy(self);
 }
 
 // Callback that gets triggered when the server seat wants to set a selection.
