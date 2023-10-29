@@ -86,6 +86,9 @@ pub fn handleMap(listener: *wl.Listener(void)) void {
     self.scene_tree = server.layer_tile.createSceneTree() catch return;
     self.scene_tree.node.setEnabled(true);
 
+    // TODO: Remember to set data to ref to Window for proper Node detection during cursor motion processing.
+    self.scene_tree.node.data = @intFromPtr(self.window);
+
     // TODO: This should handle our resize logic primarily
     self.xdg_surface.surface.events.commit.add(&self.commit);
 

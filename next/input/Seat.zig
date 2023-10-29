@@ -93,15 +93,44 @@ pub fn requestStartDrag(listener: *wl.Listener(*wlr.Seat.event.RequestStartDrag)
     self.wlr_seat.startPointerDrag(event.drag, event.serial);
 }
 
-pub fn setFocus(self: *Self, window: *Window) void {
+pub fn setFocus(self: *Self, window: *Window, surface: *wlr.Surface) void {
     //TODO: On switching tty's keyboards are destroyed and hence leave the surface, when we switch back to the compositor, the keyboard is recreated
     //TODO: and events are sent apart from enter event, which is a violation of wayland protocol, so fix that.
     //TODO: https://github.com/riverwm/river/commit/d4b2f2b0fc5766c8ae14a6f42fe76d058bfb3505
     // If currently focused surface is a layer then we don't want other apps to get the focus :)
-    if (self.focused == .layer) return;
+    //
+    // if (self.focused == .layer) return;
+
+    switch (self.focused_window) {
+        .window => |focused_window| {
+            if (focused_window == window) return;
+        },
+        else => {},
+    }
 
     if (window.output != self.focused_output) self.focusOutput(window.output);
-    //TODO: Finish this.
+    if (self.wlr_seat.keyboard_state.focused_surface) |prev_surface| {
+        if (prev_surface == surface) return;
+        if (prev_surface.isXdgSurface()) {
+            const xdg_surface = wlr.XdgSurface.fromWlrSurface(prev_surface) orelse return;
+            _ = xdg_surface.role_data.toplevel.setActivated(false);
+        }
+    }
+
+    switch (window.backend) {
+        .xdg_toplevel => |xdg_toplevel| {
+            xdg_toplevel.scene_tree.node.raiseToTop();
+            _ = xdg_toplevel.xdg_surface.role_data.toplevel.setActivated(true);
+        },
+    }
+
+    const wlr_keyboard = self.wlr_seat.getKeyboard() orelse return;
+    self.wlr_seat.keyboardNotifyEnter(
+        surface,
+        &wlr_keyboard.keycodes,
+        wlr_keyboard.num_keycodes,
+        &wlr_keyboard.modifiers,
+    );
 }
 
 pub fn focusOutput(self: *Self, output: *Output) void {

@@ -111,4 +111,43 @@ pub fn handleDestroy(self: *Self) void {
             allocator.destroy(self);
         }
     }
+
+    // Set the focus to the window below the cursor :)
+    const window_below_cursor = windowAt(server.wlr_cursor.x, server.wlr_cursor.y) orelse return;
+    server.seat.setFocus(window_below_cursor.window, window_below_cursor.surface);
+}
+
+const WindowAt = struct {
+    window: *Self,
+    surface: *wlr.Surface,
+    sx: f64,
+    sy: f64,
+};
+
+pub fn windowAt(
+    lx: f64,
+    ly: f64,
+) ?WindowAt {
+    var sx: f64 = undefined;
+    var sy: f64 = undefined;
+
+    if (server.wlr_scene.tree.node.at(lx, ly, &sx, &sy)) |node| {
+        if (node.type != .buffer) return null;
+
+        const scene_buffer = wlr.SceneBuffer.fromNode(node);
+        const scene_surface = wlr.SceneSurface.fromBuffer(scene_buffer) orelse return null;
+
+        var it: ?*wlr.SceneTree = node.parent;
+        while (it) |n| : (it = n.node.parent) {
+            if (@as(?*Self, @ptrFromInt(n.node.data))) |window| {
+                return WindowAt{
+                    .window = window,
+                    .surface = scene_surface.surface,
+                    .sx = sx,
+                    .sy = sy,
+                };
+            }
+        }
+    }
+    return null;
 }

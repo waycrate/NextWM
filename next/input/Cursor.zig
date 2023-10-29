@@ -17,6 +17,7 @@ const wl = @import("wayland").server.wl;
 const wlr = @import("wlroots");
 
 const Server = @import("../Server.zig");
+const Window = @import("../desktop/Window.zig");
 
 server: *Server,
 
@@ -41,6 +42,9 @@ pub fn init(self: *Self, device: *wlr.InputDevice) !void {
     };
 
     if (self.wlr_input_device.isLibinput()) {
+        //TODO: More libinput config_required.
+        // This is probably generic for any kind of device and can be a global function in the InputManager / InputConfig namespace.
+        //
         //const libinput_device = @ptrCast(*c.libinput_device, self.wlr_input_device.getLibinputDevice().?);
 
         //if (c.libinput_device_config_tap_get_finger_count(libinput_device) > 0) {
@@ -57,9 +61,6 @@ pub fn init(self: *Self, device: *wlr.InputDevice) !void {
         //if (c.libinput_device_config_dwt_is_available(libinput_device)) {
         //c.libinput_device_config_dwt_set_enabled(libinput_device, 1);
         //}
-
-        //TODO: More libinput config_required.
-        // This is probably generic for any kind of device and can be a global function in the InputManager / InputConfig namespace.
     }
 
     // These listeners only need to be registered once against the wlr_cursor.
@@ -119,6 +120,7 @@ pub fn handleButton(listener: *wl.Listener(*wlr.Pointer.event.Button), event: *w
 pub fn handleFrame(listener: *wl.Listener(*wlr.Cursor), _: *wlr.Cursor) void {
     const self = @fieldParentPtr(Self, "frame", listener);
     log.debug("Signal: wlr_cursor_frame", .{});
+
     self.server.seat.wlr_seat.pointerNotifyFrame();
 }
 
@@ -128,11 +130,29 @@ pub fn handleMotion(listener: *wl.Listener(*wlr.Pointer.event.Motion), event: *w
     log.debug("Signal: wlr_cursor_motion", .{});
 
     self.server.wlr_cursor.move(event.device, event.delta_x, event.delta_y);
-
-    //TODO: Process the cursor movement now.
-    self.server.wlr_xcursor_manager.setCursorImage("left_ptr", self.server.wlr_cursor);
+    self.processCursorMotion(event.time_msec);
 }
 
-pub fn handleMotionAbsolute(_: *wl.Listener(*wlr.Pointer.event.MotionAbsolute), _: *wlr.Pointer.event.MotionAbsolute) void {
+pub fn handleMotionAbsolute(listener: *wl.Listener(*wlr.Pointer.event.MotionAbsolute), event: *wlr.Pointer.event.MotionAbsolute) void {
+    const self = @fieldParentPtr(Self, "motion_absolute", listener);
     log.debug("Signal: wlr_cursor_motion_absolute", .{});
+
+    self.server.wlr_cursor.warpAbsolute(event.device, event.x, event.y);
+    self.processCursorMotion(event.time_msec);
+}
+
+pub fn processCursorMotion(self: *Self, time_msec: u32) void {
+
+    //TODO: Handle cursor modes like move, resize, etc
+    // for now we do very basic handling of a passthrough mode.
+
+    if (Window.windowAt(self.server.wlr_cursor.x, self.server.wlr_cursor.y)) |window_data| {
+        self.server.seat.wlr_seat.pointerNotifyEnter(window_data.surface, window_data.sx, window_data.sy);
+        self.server.seat.wlr_seat.pointerNotifyMotion(time_msec, window_data.sx, window_data.sy);
+
+        self.server.seat.setFocus(window_data.window, window_data.surface);
+    } else {
+        self.server.wlr_xcursor_manager.setCursorImage("left_ptr", self.server.wlr_cursor);
+        self.server.seat.wlr_seat.pointerClearFocus();
+    }
 }
